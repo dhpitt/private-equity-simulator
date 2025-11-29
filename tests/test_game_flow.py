@@ -47,7 +47,7 @@ def test_player_cash_operations():
 
 def test_player_debt_operations():
     """Test player debt management."""
-    player = Player(starting_cash=100_000_000, debt_capacity=200_000_000)
+    player = Player(starting_cash=100_000_000)
     
     # Take debt
     success = player.take_debt(50_000_000)
@@ -55,10 +55,15 @@ def test_player_debt_operations():
     assert player.current_debt == 50_000_000
     assert player.cash == 150_000_000
     
-    # Try to exceed capacity
-    success = player.take_debt(200_000_000)
+    # Debt capacity should be sufficient for initial player
+    initial_capacity = player.get_debt_capacity()
+    assert initial_capacity > 50_000_000
+    
+    # Try to exceed capacity (exact limit depends on net worth, so test with large amount)
+    original_debt = player.current_debt
+    success = player.take_debt(10_000_000_000)  # $10B - definitely too much
     assert success == False
-    assert player.current_debt == 50_000_000
+    assert player.current_debt == original_debt  # Debt unchanged
     
     # Repay debt
     success = player.repay_debt(20_000_000)

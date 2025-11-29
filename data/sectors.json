@@ -1,23 +1,74 @@
 {
   "sectors": [
     "Technology",
-    "Healthcare",
-    "Consumer",
-    "Industrial",
-    "Financial Services",
-    "Energy",
+    "Healthcare", 
+    "Food & Beverage",
+    "Retail & Consumer",
+    "Home Services",
+    "Auto Services",
+    "Personal Services",
+    "Professional Services",
     "Real Estate",
-    "Retail"
+    "Manufacturing"
   ],
   "sector_descriptions": {
     "Technology": "Software, hardware, IT services, and tech-enabled businesses",
-    "Healthcare": "Medical devices, pharma, healthcare services, biotech",
-    "Consumer": "Consumer products, food & beverage, personal care",
-    "Industrial": "Manufacturing, distribution, industrial services",
-    "Financial Services": "Insurance, asset management, fintech, payment processing",
-    "Energy": "Oil & gas, renewables, energy services",
-    "Real Estate": "Commercial real estate, REITs, property management",
-    "Retail": "Brick & mortar retail, e-commerce, specialty retail"
+    "Healthcare": "Medical devices, pharma, healthcare services, clinics",
+    "Food & Beverage": "Restaurants, cafes, bars, food retail, catering",
+    "Retail & Consumer": "Retail stores, consumer products, e-commerce",
+    "Home Services": "Plumbing, HVAC, roofing, landscaping, cleaning",
+    "Auto Services": "Auto repair, body shops, car washes, parts",
+    "Personal Services": "Salons, barbershops, spas, gyms, pet care",
+    "Professional Services": "Accounting, legal, consulting, marketing",
+    "Real Estate": "Property management, real estate services",
+    "Manufacturing": "Light manufacturing, distribution, industrial"
+  },
+  "sector_local_business_types": {
+    "Food & Beverage": [
+      "Pizza", "Bakery", "Cafe", "Coffee Shop", "Diner", "Bar & Grill",
+      "Restaurant", "Deli", "Ice Cream Shop", "Donut Shop", "Sandwich Shop",
+      "Steakhouse", "Burger Joint", "Taco Shop", "Sushi Bar", "Liquor Store",
+      "Wine Shop", "Brewery", "Food Truck", "Catering"
+    ],
+    "Retail & Consumer": [
+      "Convenience Store", "Grocery", "Hardware", "Pet Store", "Florist",
+      "Gift Shop", "Bookstore", "Toy Store", "Sporting Goods", "Electronics",
+      "Furniture", "Clothing Store", "Jewelry Store", "Pawn Shop"
+    ],
+    "Home Services": [
+      "Plumbing", "HVAC", "Roofing", "Landscaping", "Lawn Care",
+      "Cleaning Services", "Pest Control", "Handyman", "Painting",
+      "Electrical", "Carpet Cleaning", "Window Cleaning", "Junk Removal"
+    ],
+    "Auto Services": [
+      "Auto Repair", "Auto Body", "Car Wash", "Oil Change", "Tire Shop",
+      "Muffler Shop", "Auto Parts", "Detailing", "Towing"
+    ],
+    "Personal Services": [
+      "Hair Salon", "Barbershop", "Nail Salon", "Spa", "Massage",
+      "Tattoo Shop", "Gym", "Yoga Studio", "Tanning Salon", "Pet Grooming",
+      "Day Care", "Dry Cleaners", "Laundromat"
+    ],
+    "Professional Services": [
+      "Accounting Firm", "Law Office", "Insurance Agency", "Real Estate Office",
+      "Marketing Agency", "IT Services", "Consulting", "Financial Advisor"
+    ],
+    "Healthcare": [
+      "Dental Office", "Medical Clinic", "Urgent Care", "Pharmacy",
+      "Physical Therapy", "Chiropractor", "Veterinary Clinic", "Eye Care"
+    ],
+    "Technology": [
+      "Computer Repair", "Phone Repair", "IT Support", "Web Design",
+      "Software Development"
+    ],
+    "Real Estate": [
+      "Property Management", "Real Estate Brokerage", "Title Company",
+      "Property Inspection"
+    ],
+    "Manufacturing": [
+      "Machine Shop", "Fabrication", "Print Shop", "Packaging",
+      "Distribution Center", "Warehouse"
+    ]
   }
 }
 

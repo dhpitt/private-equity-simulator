@@ -1,0 +1,325 @@
+{
+  "cost_cutting_narratives": {
+    "Food & Beverage": {
+      "low_intensity": [
+        "You direct management to switch to generic brand ingredients",
+        "You eliminate free employee meals",
+        "You reduce portion sizes by 10%",
+        "You switch from fresh to frozen ingredients where possible"
+      ],
+      "medium_intensity": [
+        "You lay off 15% of kitchen staff during off-peak hours",
+        "You switch to paper napkins instead of cloth",
+        "You eliminate all garnishes and presentation elements",
+        "You replace the espresso machine with instant coffee"
+      ],
+      "high_intensity": [
+        "You cut wages by 20% across the board",
+        "You eliminate health benefits for all employees",
+        "You switch to single-ply toilet paper (customers notice)",
+        "You require dishwashers to reuse water for multiple loads"
+      ]
+    },
+    "Healthcare": {
+      "low_intensity": [
+        "You switch to generic medications whenever possible",
+        "You reduce magazine subscriptions in the waiting room",
+        "You dim the lights in non-critical areas",
+        "You eliminate free coffee in the waiting room"
+      ],
+      "medium_intensity": [
+        "You reduce nursing staff by 15%",
+        "You eliminate Saturday clinic hours",
+        "You switch to cheaper, scratchier patient gowns",
+        "You require doctors to see 20% more patients per day"
+      ],
+      "high_intensity": [
+        "You direct management to use bedpans made of cardboard",
+        "You eliminate all non-essential medical equipment",
+        "You cut nurse wages by 20%",
+        "You replace anesthesiologists with 'a wooden stick to bite on'"
+      ]
+    },
+    "Retail & Consumer": {
+      "low_intensity": [
+        "You reduce store hours by closing an hour early",
+        "You eliminate employee discounts",
+        "You switch to cheaper shopping bags",
+        "You reduce heating/cooling to minimum levels"
+      ],
+      "medium_intensity": [
+        "You lay off 20% of floor staff",
+        "You eliminate the loyalty rewards program",
+        "You switch to automated checkouts only",
+        "You turn off half the store lights to save electricity"
+      ],
+      "high_intensity": [
+        "You cut all wages by 25%",
+        "You eliminate all employee breaks",
+        "You switch to 'honor system' payment boxes",
+        "You stop cleaning the bathrooms entirely"
+      ]
+    },
+    "Home Services": {
+      "low_intensity": [
+        "You switch to cheaper, lower-grade materials",
+        "You reduce warranty periods from 1 year to 90 days",
+        "You eliminate free estimates - now charging $50",
+        "You switch from branded tools to Harbor Freight"
+      ],
+      "medium_intensity": [
+        "You lay off 20% of technicians",
+        "You require technicians to use their own vehicles",
+        "You eliminate overtime pay",
+        "You stop providing any guarantees on work"
+      ],
+      "high_intensity": [
+        "You cut technician pay by 30%",
+        "You eliminate all employee benefits",
+        "You switch to 'watching YouTube videos' as training",
+        "You eliminate liability insurance (risky!)"
+      ]
+    },
+    "Auto Services": {
+      "low_intensity": [
+        "You switch to generic oil and fluids",
+        "You eliminate free car washes with service",
+        "You reduce warranty on parts from 1 year to 6 months",
+        "You switch to cheaper, imported parts"
+      ],
+      "medium_intensity": [
+        "You lay off 20% of mechanics",
+        "You require mechanics to work faster (quality drops)",
+        "You eliminate diagnostic scanning - guessing now",
+        "You switch to refurbished parts only"
+      ],
+      "high_intensity": [
+        "You cut mechanic wages by 25%",
+        "You use duct tape as a 'temporary permanent fix'",
+        "You eliminate all safety inspections",
+        "You eliminate the lift - everything on jack stands now"
+      ]
+    },
+    "Personal Services": {
+      "low_intensity": [
+        "You switch to cheaper product lines",
+        "You reduce appointment times by 15%",
+        "You eliminate complimentary beverages",
+        "You reduce towel quality and wash less frequently"
+      ],
+      "medium_intensity": [
+        "You lay off 20% of staff",
+        "You require stylists to purchase their own supplies",
+        "You switch to 'bring your own towel' policy",
+        "You eliminate air conditioning to save costs"
+      ],
+      "high_intensity": [
+        "You cut stylist wages by 30%",
+        "You require clients to wash their own hair",
+        "You switch to kitchen scissors for haircuts",
+        "You use '2-in-1' product for everything"
+      ]
+    },
+    "Professional Services": {
+      "low_intensity": [
+        "You eliminate free coffee and snacks for clients",
+        "You switch from private offices to open floor plan",
+        "You reduce office cleaning frequency",
+        "You eliminate printed materials - email only"
+      ],
+      "medium_intensity": [
+        "You lay off 20% of staff",
+        "You require all employees to bring their own laptops",
+        "You switch to shared workspaces instead of offices",
+        "You eliminate support staff - everyone answers phones now"
+      ],
+      "high_intensity": [
+        "You cut professional salaries by 25%",
+        "You eliminate all employee benefits",
+        "You switch to AI-generated work wherever possible",
+        "You require interns to do all the actual work"
+      ]
+    },
+    "Technology": {
+      "low_intensity": [
+        "You cancel all software licenses - using open source now",
+        "You eliminate free snacks and drinks",
+        "You downgrade internet to basic cable speeds",
+        "You switch from dual monitors to single monitors"
+      ],
+      "medium_intensity": [
+        "You lay off 20% of developers",
+        "You eliminate work-from-home options",
+        "You require devs to work 60-hour weeks",
+        "You eliminate QA department - ship and pray"
+      ],
+      "high_intensity": [
+        "You cut engineer salaries by 30%",
+        "You require devs to use their own computers",
+        "You outsource everything to the lowest bidder",
+        "You switch to 'copy code from Stack Overflow' as development strategy"
+      ]
+    },
+    "Real Estate": {
+      "low_intensity": [
+        "You reduce property maintenance frequency",
+        "You eliminate landscaping services",
+        "You switch to cheaper property management software",
+        "You eliminate holiday decorations and events"
+      ],
+      "medium_intensity": [
+        "You lay off 20% of maintenance staff",
+        "You eliminate 24/7 emergency maintenance",
+        "You switch to tenant self-service for repairs",
+        "You defer all non-critical maintenance"
+      ],
+      "high_intensity": [
+        "You cut property manager salaries by 25%",
+        "You eliminate building insurance (very risky!)",
+        "You require tenants to do their own repairs",
+        "You switch to 'bring your own light bulbs' policy"
+      ]
+    },
+    "Manufacturing": {
+      "low_intensity": [
+        "You switch to cheaper raw materials",
+        "You reduce quality control inspections by 50%",
+        "You eliminate employee training programs",
+        "You defer all equipment maintenance"
+      ],
+      "medium_intensity": [
+        "You lay off 25% of production workers",
+        "You eliminate all overtime pay",
+        "You switch to cheaper, lower-quality components",
+        "You require faster production quotas (quality drops)"
+      ],
+      "high_intensity": [
+        "You cut worker wages by 30%",
+        "You eliminate all safety equipment to save money",
+        "You switch to 'parts fall off, customer problem' quality",
+        "You use duct tape as a primary manufacturing material"
+      ]
+    }
+  },
+  "narrative_templates": {
+    "low_intensity": [
+      "You switch to using {production_input} made of {inferior_material}",
+      "You require staff to {cost_cutting_action} to save money",
+      "You replace {premium_item} with {cheap_alternative}",
+      "You eliminate {luxury_item} to cut costs"
+    ],
+    "medium_intensity": [
+      "You mandate that all {equipment} be {degrading_action}",
+      "You switch to {substandard_practice} despite {obvious_problem}",
+      "You require {staff_type} to {unreasonable_demand}"
+    ],
+    "high_intensity": [
+      "You direct management to use {essential_item} made of {absurd_material}",
+      "You replace all {important_equipment} with {ridiculous_substitute}",
+      "You require {workers} to {extreme_measure} or face termination"
+    ]
+  },
+  "template_variables": {
+    "Food & Beverage": {
+      "production_input": ["plates", "cups", "utensils", "napkins", "tablecloths", "menus"],
+      "inferior_material": ["cardboard", "recycled newspaper", "paper mache", "biodegradable seaweed", "compressed sawdust", "eco-friendly paper"],
+      "cost_cutting_action": ["wash dishes in cold water only", "reuse cooking oil indefinitely", "serve day-old bread", "water down all beverages"],
+      "premium_item": ["fresh herbs", "butter", "real cheese", "premium coffee beans"],
+      "cheap_alternative": ["dried seasoning", "margarine", "cheese product", "instant coffee crystals"],
+      "luxury_item": ["tableside service", "bread baskets", "complimentary appetizers", "garnishes"],
+      "equipment": ["ovens", "refrigerators", "dishwashers", "grills"],
+      "degrading_action": ["operated at half power", "turned off overnight", "shared between locations", "repaired with duct tape"],
+      "substandard_practice": ["reheating returned food", "serving expired ingredients", "washing dishes by hand in a bucket"],
+      "obvious_problem": ["health code violations", "customer complaints", "staff protests"],
+      "staff_type": ["servers", "cooks", "dishwashers", "hosts"],
+      "unreasonable_demand": ["work triple shifts without breaks", "bring ingredients from home", "clean with their own supplies"],
+      "essential_item": ["serving dishes", "cooking pots", "food containers", "drink glasses"],
+      "absurd_material": ["origami paper", "wax-coated cardboard", "compressed tofu", "recyclable foam"],
+      "important_equipment": ["stoves", "refrigerators", "freezers"],
+      "ridiculous_substitute": ["hot plates from Goodwill", "coolers with ice", "a neighbor's garage"],
+      "workers": ["kitchen staff", "servers", "bussers"],
+      "extreme_measure": ["share tips with management", "work for food instead of wages", "clean bathrooms between orders"]
+    },
+    "Healthcare": {
+      "production_input": ["patient gowns", "exam table paper", "bandages", "surgical masks", "gloves"],
+      "inferior_material": ["tissue paper", "newspaper", "cheese cloth", "coffee filters", "paper towels", "sandwich bags"],
+      "cost_cutting_action": ["sterilize equipment in the microwave", "reuse disposable items", "skip the hand washing protocol"],
+      "premium_item": ["brand-name medications", "digital thermometers", "padded exam tables"],
+      "cheap_alternative": ["generic pills from overseas", "oral thermometers (shared)", "folding chairs"],
+      "luxury_item": ["waiting room TV", "current magazines", "comfortable seating", "appointment reminders"],
+      "equipment": ["diagnostic machines", "exam tables", "waiting room chairs", "computers"],
+      "degrading_action": ["used for double the intended patients", "operated without maintenance", "shared among facilities"],
+      "substandard_practice": ["10-minute appointments only", "diagnosis by phone", "self-service blood pressure checks"],
+      "obvious_problem": ["malpractice risks", "patient safety concerns", "regulatory violations"],
+      "staff_type": ["nurses", "technicians", "receptionists"],
+      "unreasonable_demand": ["see 50 patients per day", "work without breaks", "sterilize equipment at home"],
+      "essential_item": ["syringes", "IV bags", "surgical instruments", "examination lights"],
+      "absurd_material": ["recycled plastic", "duct tape and hope", "3D-printed knockoffs", "paper clips and rubber bands"],
+      "important_equipment": ["X-ray machines", "ultrasounds", "lab equipment"],
+      "ridiculous_substitute": ["smartphone flashlights", "a Magic 8-Ball", "equipment borrowed from veterinarians"],
+      "workers": ["nurses", "doctors", "staff"],
+      "extreme_measure": ["diagnose without examining patients", "prescribe randomly", "work 24-hour shifts"]
+    },
+    "Personal Services": {
+      "production_input": ["towels", "robes", "yoga mats", "massage tables", "styling capes"],
+      "inferior_material": ["paper towels", "garbage bags", "eco-friendly paper", "pool floaties", "plastic tarps"],
+      "cost_cutting_action": ["reuse towels between clients", "water down all products", "skip sanitization"],
+      "premium_item": ["salon-quality products", "hot towels", "aromatherapy oils", "premium shampoo"],
+      "cheap_alternative": ["dollar store products", "wet paper towels", "scented water", "dish soap"],
+      "luxury_item": ["complimentary beverages", "magazines", "WiFi", "air conditioning"],
+      "equipment": ["hair dryers", "styling chairs", "massage tables", "exercise equipment"],
+      "degrading_action": ["shared between stylists", "operated on minimum settings", "used until they break"],
+      "substandard_practice": ["15-minute haircuts", "no-rinse shampooing", "standing-room-only service"],
+      "obvious_problem": ["client complaints", "hygiene concerns", "safety issues"],
+      "staff_type": ["stylists", "trainers", "massage therapists"],
+      "unreasonable_demand": ["see 30 clients per day", "bring their own supplies", "work without chairs"],
+      "essential_item": ["scissors", "combs", "yoga blocks", "dumbbells"],
+      "absurd_material": ["plastic", "cardboard", "pool noodles", "duct tape"],
+      "important_equipment": ["styling chairs", "massage tables", "exercise machines"],
+      "ridiculous_substitute": ["folding chairs", "yoga mats on the floor", "resistance bands only"],
+      "workers": ["stylists", "trainers", "staff"],
+      "extreme_measure": ["cut hair without washing it", "train clients in groups of 50", "work in the parking lot"]
+    },
+    "Auto Services": {
+      "production_input": ["floor jacks", "diagnostic computers", "waiting room chairs", "parts bins"],
+      "inferior_material": ["milk crates", "smartphones with free apps", "5-gallon buckets", "cardboard boxes"],
+      "cost_cutting_action": ["guess at repairs instead of diagnosing", "reuse old parts", "skip test drives"],
+      "premium_item": ["OEM parts", "synthetic oil", "computerized diagnostics"],
+      "cheap_alternative": ["sketchy eBay parts", "conventional oil (used)", "a mechanic's intuition"],
+      "luxury_item": ["loaner vehicles", "free car wash", "comfortable waiting room", "shuttle service"],
+      "equipment": ["lifts", "tire changers", "alignment machines", "diagnostic tools"],
+      "degrading_action": ["operated past their safe load", "manually operated", "shared between bays"],
+      "substandard_practice": ["tightening bolts 'by feel'", "visual inspections only", "customer-assisted repairs"],
+      "obvious_problem": ["liability issues", "safety violations", "warranty voids"],
+      "staff_type": ["mechanics", "technicians", "service advisors"],
+      "unreasonable_demand": ["complete jobs in half the time", "use their own tools", "guarantee impossible fixes"],
+      "essential_item": ["jack stands", "torque wrenches", "brake fluid", "engine oil"],
+      "absurd_material": ["wooden blocks", "eyeball measurements", "water", "cooking oil"],
+      "important_equipment": ["hydraulic lifts", "tire machines", "brake lathes"],
+      "ridiculous_substitute": ["floor jacks and prayers", "hammers and determination", "YouTube tutorials"],
+      "workers": ["mechanics", "lube technicians", "service writers"],
+      "extreme_measure": ["work on cars in the parking lot", "eyeball all measurements", "hammer it until it fits"]
+    },
+    "Home Services": {
+      "production_input": ["pipes", "electrical wire", "lumber", "roofing materials", "paint"],
+      "inferior_material": ["PVC held together with hope", "speaker wire", "pallet wood", "tarp and duct tape", "house paint mixed with water"],
+      "cost_cutting_action": ["skip permitting", "eyeball all measurements", "reuse old materials"],
+      "premium_item": ["copper pipes", "proper insulation", "quality fixtures", "professional tools"],
+      "cheap_alternative": ["garden hoses", "newspaper", "secondhand parts", "borrowed tools"],
+      "luxury_item": ["warranties", "follow-up visits", "detailed quotes", "cleanup service"],
+      "equipment": ["power tools", "ladders", "safety gear", "measuring tools"],
+      "degrading_action": ["operated until failure", "borrowed from neighbors", "rented by the hour"],
+      "substandard_practice": ["no-permit repairs", "eyeball-level installations", "YouTube-trained work"],
+      "obvious_problem": ["code violations", "safety hazards", "liability issues"],
+      "staff_type": ["technicians", "installers", "helpers"],
+      "unreasonable_demand": ["complete jobs in half time", "provide own materials", "skip safety protocols"],
+      "essential_item": ["safety harnesses", "circuit breakers", "shut-off valves", "load-bearing supports"],
+      "absurd_material": ["bungee cords", "aluminum foil", "twist ties", "popsicle sticks"],
+      "important_equipment": ["compressors", "welders", "excavators"],
+      "ridiculous_substitute": ["bicycle pumps", "a lighter", "shovels"],
+      "workers": ["plumbers", "electricians", "roofers"],
+      "extreme_measure": ["work without permits", "skip code inspections", "use 'creative' solutions"]
+    }
+  }
+}
+

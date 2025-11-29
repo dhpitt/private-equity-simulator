@@ -5,19 +5,24 @@ Portfolio operations - actions that can be taken on portfolio companies.
 from typing import Dict, Any
 import random
 import config
+from simulation.narratives import get_cost_cutting_consequence
 
 
 def apply_cost_cutting(company: 'Company', intensity: float = 0.5) -> Dict[str, Any]:
     """
     Apply cost-cutting measures to improve margins.
+    Now with narrative consequences!
     
     Args:
         company: Company to apply cost-cutting to
         intensity: Intensity of cost-cutting (0-1 scale)
         
     Returns:
-        Dictionary with results
+        Dictionary with results including narrative
     """
+    # Get sector-specific narrative
+    narrative_result = get_cost_cutting_consequence(company.sector, intensity)
+    
     # Cost cutting improves margins but may hurt growth
     max_margin_improvement = config.COST_CUTTING_MAX_IMPACT * intensity
     margin_improvement = random.uniform(0, max_margin_improvement)
@@ -25,24 +30,41 @@ def apply_cost_cutting(company: 'Company', intensity: float = 0.5) -> Dict[str, 
     # Growth penalty (aggressive cost cutting hurts growth)
     growth_penalty = intensity * 0.02  # Up to -2% growth
     
+    # Higher intensity = higher risk of additional negative effects
+    morale_impact = False
+    reputation_hit = 0.0
+    
+    if intensity > 0.7:
+        # High intensity - significant risks
+        if random.random() < 0.5:
+            additional_growth_penalty = random.uniform(0.01, 0.03)
+            growth_penalty += additional_growth_penalty
+            morale_impact = True
+        
+        # Might hurt reputation
+        if random.random() < 0.3:
+            reputation_hit = random.uniform(0.01, 0.03)
+    
+    elif intensity > 0.4:
+        # Medium intensity - moderate risks
+        if random.random() < 0.3:
+            additional_growth_penalty = 0.01
+            growth_penalty += additional_growth_penalty
+            morale_impact = True
+    
     # Apply changes
     old_margin = company.ebitda_margin
     company.ebitda_margin = min(0.50, company.ebitda_margin + margin_improvement)
     company.growth_rate -= growth_penalty
-    
-    # Chance of negative morale impact
-    if intensity > 0.7 and random.random() < 0.3:
-        additional_growth_penalty = 0.01
-        company.growth_rate -= additional_growth_penalty
-        morale_impact = True
-    else:
-        morale_impact = False
         
     return {
         'success': True,
         'margin_improvement': company.ebitda_margin - old_margin,
         'growth_penalty': growth_penalty,
         'morale_impact': morale_impact,
+        'reputation_hit': reputation_hit,
+        'narrative_action': narrative_result['action'],
+        'narrative_consequence': narrative_result['consequence'],
         'message': f"Margins improved by {(company.ebitda_margin - old_margin):.1%}"
     }
 

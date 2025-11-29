@@ -9,21 +9,50 @@ import config
 class Player:
     """Represents the player managing the PE fund."""
     
-    def __init__(self, starting_cash: float = None, debt_capacity: float = None):
+    def __init__(self, starting_cash: float = None):
         self.cash = starting_cash if starting_cash is not None else config.STARTING_CAPITAL
-        self.debt_capacity = debt_capacity if debt_capacity is not None else config.STARTING_DEBT_CAPACITY
         self.current_debt = 0.0
         self.portfolio: List['Company'] = []
-        self.reputation = 1.0  # 0-1 scale, affects deal terms
+        self.reputation = 1.0  # 0-1 scale, affects debt capacity and deal terms
         self.deal_history: List[Dict[str, Any]] = []
+        
+        # Base debt capacity (grows with reputation and net worth)
+        self.base_debt_capacity = config.BASE_DEBT_CAPACITY
         
     def adjust_cash(self, amount: float) -> None:
         """Add or remove cash from player's balance."""
         self.cash += amount
         
+    def get_debt_capacity(self) -> float:
+        """
+        Calculate current debt capacity based on net worth and reputation.
+        
+        Formula: base_capacity + (net_worth * debt_to_nw_ratio * reputation_factor)
+        
+        Higher reputation increases debt capacity significantly.
+        Higher net worth allows more leverage.
+        """
+        net_worth = self.compute_net_worth()
+        
+        # Reputation factor: ranges from 0.5 (low rep) to 2.0 (high rep)
+        # This means low reputation severely limits debt access
+        reputation_factor = 0.5 + (self.reputation * config.REPUTATION_DEBT_MULTIPLIER - 0.5)
+        
+        # Calculate capacity from net worth
+        net_worth_capacity = max(0, net_worth) * config.DEBT_TO_NET_WORTH_RATIO * reputation_factor
+        
+        # Total capacity is base plus net-worth-driven capacity
+        total_capacity = self.base_debt_capacity + net_worth_capacity
+        
+        # Ensure minimum capacity
+        total_capacity = max(config.MIN_DEBT_CAPACITY, total_capacity)
+        
+        return total_capacity
+    
     def take_debt(self, amount: float) -> bool:
         """Attempt to take on debt. Returns True if successful."""
-        if self.current_debt + amount <= self.debt_capacity:
+        current_capacity = self.get_debt_capacity()
+        if self.current_debt + amount <= current_capacity:
             self.current_debt += amount
             self.cash += amount
             return True
@@ -70,5 +99,13 @@ class Player:
         
     def available_capital(self) -> float:
         """Calculate available capital for investments (cash + unused debt capacity)."""
-        return self.cash + (self.debt_capacity - self.current_debt)
+        current_capacity = self.get_debt_capacity()
+        return self.cash + (current_capacity - self.current_debt)
+    
+    def get_debt_utilization(self) -> float:
+        """Calculate debt utilization as percentage of capacity."""
+        capacity = self.get_debt_capacity()
+        if capacity <= 0:
+            return 0.0
+        return self.current_debt / capacity
 

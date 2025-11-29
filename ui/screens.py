@@ -20,19 +20,29 @@ def show_intro() -> None:
     
     title = Text("PRIVATE EQUITY SIMULATOR", style="bold cyan", justify="center")
     
+    # Calculate starting debt capacity for intro
+    starting_net_worth = config.STARTING_CAPITAL
+    reputation_factor = 0.5 + (1.0 * config.REPUTATION_DEBT_MULTIPLIER - 0.5)  # Max reputation
+    starting_capacity = config.BASE_DEBT_CAPACITY + (starting_net_worth * config.DEBT_TO_NET_WORTH_RATIO * reputation_factor)
+    starting_capacity = max(config.MIN_DEBT_CAPACITY, starting_capacity)
+    
     intro_text = f"""
 Welcome to the Private Equity Simulator!
 
 You are the managing partner of a new private equity fund with:
-  • ${config.STARTING_CAPITAL:,.0f} in capital
-  • ${config.STARTING_DEBT_CAPACITY:,.0f} in debt capacity
+  • ${config.STARTING_CAPITAL:,.0f} in starting capital
+  • ${starting_capacity:,.0f} initial debt capacity (grows with success!)
   • {config.GAME_DURATION_QUARTERS} quarters ({config.GAME_DURATION_QUARTERS // 4} years) to build your portfolio
 
 Your goal is to maximize your fund's value by:
-  • Acquiring promising companies
+  • Acquiring promising companies (debt financing required!)
   • Improving their operations
+  • Building reputation and net worth to unlock more debt capacity
   • Managing through market cycles
   • Exiting at the right time
+
+Key Mechanic: Your debt capacity increases as you build net worth and 
+maintain your reputation. Success breeds more opportunity!
 
 Good luck!
     """

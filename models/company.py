@@ -12,7 +12,8 @@ class Company:
     """Represents a portfolio company with financial and operational characteristics."""
     
     def __init__(self, name: str, sector: str, revenue: float, ebitda_margin: float,
-                 growth_rate: float = None, volatility: float = None, manager: Manager = None):
+                 growth_rate: float = None, volatility: float = None, manager: Manager = None,
+                 valuation_multiple: float = None):
         self.name = name
         self.sector = sector
         self.revenue = revenue
@@ -22,6 +23,9 @@ class Company:
         )
         self.volatility = volatility if volatility is not None else config.REVENUE_VOLATILITY
         self.manager = manager or Manager()
+        
+        # Company-specific valuation multiple (initialized from sector mean + noise)
+        self.valuation_multiple = valuation_multiple
         
         # Valuation tracking
         self.acquisition_price: Optional[float] = None
@@ -73,9 +77,13 @@ class Company:
     def calculate_valuation(self, market: 'Market' = None) -> float:
         """
         Calculate company valuation using EBITDA multiple.
-        If market is provided, use sector-specific multiple.
+        Uses company-specific multiple if available, otherwise uses sector multiple from market.
         """
-        if market:
+        if self.valuation_multiple is not None:
+            # Use company-specific multiple (already incorporates sector characteristics + noise)
+            multiple = self.valuation_multiple
+        elif market:
+            # Fall back to sector average from market
             multiple = market.get_sector_multiple(self.sector)
         else:
             # Default multiple

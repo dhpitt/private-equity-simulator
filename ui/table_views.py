@@ -79,6 +79,11 @@ def display_company_detail(company: Company) -> None:
     financial_table.add_row("Revenue", f"${company.revenue:,.0f}")
     financial_table.add_row("EBITDA", f"${company.ebitda:,.0f}")
     financial_table.add_row("EBITDA Margin", f"{company.ebitda_margin:.1%}")
+    
+    # Show company-specific multiple if available
+    if company.valuation_multiple:
+        financial_table.add_row("Valuation Multiple", f"{company.valuation_multiple:.1f}x")
+    
     financial_table.add_row("Growth Rate", f"{company.growth_rate:+.1%} quarterly")
     financial_table.add_row("Quarterly Growth", f"{company.get_quarterly_growth():+.1%}")
     financial_table.add_row("Current Valuation", f"${company.current_valuation:,.0f}")
@@ -146,9 +151,13 @@ def display_player_summary(player: 'Player') -> None:
     summary_table.add_column("Metric", style="cyan")
     summary_table.add_column("Value", style="bold green")
     
+    debt_capacity = player.get_debt_capacity()
+    debt_utilization = player.get_debt_utilization()
+    
     summary_table.add_row("Cash", f"${player.cash:,.0f}")
     summary_table.add_row("Debt", f"${player.current_debt:,.0f}")
-    summary_table.add_row("Debt Capacity", f"${player.debt_capacity:,.0f}")
+    summary_table.add_row("Debt Capacity", f"${debt_capacity:,.0f}")
+    summary_table.add_row("Debt Utilization", f"{debt_utilization:.1%}")
     summary_table.add_row("Available Capital", f"${player.available_capital():,.0f}")
     summary_table.add_row("Portfolio Value", f"${player.compute_portfolio_value():,.0f}")
     summary_table.add_row("Net Worth", f"${player.compute_net_worth():,.0f}")

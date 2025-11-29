@@ -16,7 +16,7 @@ def main_menu(player: Player, market: Market, time_manager: 'TimeManager') -> st
     Display main menu and get player's action choice.
     
     Returns:
-        Action string: 'acquire', 'operate', 'exit', 'portfolio', 'market', 'advance', 'quit'
+        Action string: 'acquire', 'operate', 'exit', 'portfolio', 'market', 'advance', 'save', 'quit'
     """
     ih.clear_screen()
     
@@ -24,9 +24,11 @@ def main_menu(player: Player, market: Market, time_manager: 'TimeManager') -> st
     print(f"PRIVATE EQUITY SIMULATOR - {time_manager.get_time_display()}")
     print("=" * 70)
     print(f"\nCash: ${player.cash:,.0f}")
+    print(f"Debt: ${player.current_debt:,.0f} / ${player.get_debt_capacity():,.0f} ({player.get_debt_utilization():.0%} utilized)")
+    print(f"Available Capital: ${player.available_capital():,.0f}")
     print(f"Portfolio Value: ${player.compute_portfolio_value():,.0f}")
     print(f"Net Worth: ${player.compute_net_worth():,.0f}")
-    print(f"Debt: ${player.current_debt:,.0f}")
+    print(f"Reputation: {player.reputation:.0%}")
     print(f"Portfolio Companies: {len(player.portfolio)}")
     
     options = [
@@ -36,10 +38,12 @@ def main_menu(player: Player, market: Market, time_manager: 'TimeManager') -> st
         "Operate Portfolio Companies",
         "Exit Investment",
         "Advance to Next Quarter",
-        "Quit Game"
+        "Save & Continue",
+        "Save & Exit",
+        "Quit Game (without saving)"
     ]
     
-    actions = ['portfolio', 'market', 'acquire', 'operate', 'exit', 'advance', 'quit']
+    actions = ['portfolio', 'market', 'acquire', 'operate', 'exit', 'advance', 'save_continue', 'save_exit', 'quit']
     
     choice = ih.prompt_choice(options, "What would you like to do?")
     
@@ -262,4 +266,78 @@ def event_menu(event: Dict[str, Any]) -> Optional[str]:
     else:
         ih.press_enter_to_continue()
         return None
+
+
+def save_game_menu() -> Optional[str]:
+    """
+    Menu for saving the game.
+    
+    Returns:
+        Save name or None if cancelled
+    """
+    from game.save_system import list_save_files
+    
+    ih.clear_screen()
+    print("=" * 70)
+    print("SAVE GAME")
+    print("=" * 70)
+    
+    # Show existing saves
+    saves = list_save_files()
+    if saves:
+        print("\nExisting saves:")
+        for i, (name, timestamp, quarter) in enumerate(saves, 1):
+            print(f"  {i}. {name} - {quarter} (saved: {timestamp[:19]})")
+    else:
+        print("\nNo existing saves.")
+    
+    print("\nEnter a name for your save (or press Enter to cancel):")
+    save_name = ih.prompt_text("Save name", allow_empty=True)
+    
+    if not save_name:
+        return None
+    
+    # Sanitize filename
+    save_name = "".join(c for c in save_name if c.isalnum() or c in (' ', '-', '_')).strip()
+    
+    if not save_name:
+        print("Invalid save name!")
+        ih.press_enter_to_continue()
+        return None
+    
+    return save_name
+
+
+def load_game_menu() -> Optional[str]:
+    """
+    Menu for loading a saved game.
+    
+    Returns:
+        Save name or None if cancelled
+    """
+    from game.save_system import list_save_files
+    
+    ih.clear_screen()
+    print("=" * 70)
+    print("LOAD GAME")
+    print("=" * 70)
+    
+    saves = list_save_files()
+    
+    if not saves:
+        print("\nNo save files found!")
+        ih.press_enter_to_continue()
+        return None
+    
+    print("\nAvailable saves:")
+    options = [f"{name} - {quarter} (saved: {timestamp[:19]})" 
+               for name, timestamp, quarter in saves]
+    options.append("Cancel")
+    
+    choice = ih.prompt_choice(options, "Select a save to load")
+    
+    if choice < 0 or choice >= len(saves):
+        return None
+    
+    return saves[choice][0]  # Return save name
 

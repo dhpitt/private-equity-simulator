@@ -3,9 +3,14 @@ Global configuration settings for the PE Simulator game.
 """
 
 # Game Settings
-STARTING_CAPITAL = 10_000_000  # $10M
-STARTING_DEBT_CAPACITY = 200_000_000  # $200M
+STARTING_CAPITAL = 2_000_000  # $2M (must use debt to acquire)
+BASE_DEBT_CAPACITY = 10_000_000  # $10M (base capacity)
 GAME_DURATION_QUARTERS = 20  # 5 years
+
+# Debt Capacity Dynamics
+DEBT_TO_NET_WORTH_RATIO = 3.0  # Max debt = 3x net worth
+REPUTATION_DEBT_MULTIPLIER = 2.0  # Reputation doubles the effect (at max rep)
+MIN_DEBT_CAPACITY = 5_000_000  # Always have at least $5M capacity
 
 # Random Seed (None for random, or set a number for reproducibility)
 RANDOM_SEED = None
@@ -17,13 +22,16 @@ MARKET_GROWTH_RATE = 0.02  # 2% quarterly growth
 MARKET_VOLATILITY = 0.05  # 5% volatility
 
 # Company Generation
-MIN_COMPANY_REVENUE = 10_000_000  # $10M
-MAX_COMPANY_REVENUE = 100_000_000  # $100M
+MIN_COMPANY_REVENUE = 500_000  # $500K (small local businesses)
+MAX_COMPANY_REVENUE = 20_000_000  # $20M
 MIN_EBITDA_MARGIN = 0.10  # 10%
 MAX_EBITDA_MARGIN = 0.35  # 35%
 MIN_GROWTH_RATE = -0.02  # -2% quarterly
 MAX_GROWTH_RATE = 0.08  # 8% quarterly
 REVENUE_VOLATILITY = 0.10  # 10% standard deviation
+
+# Multiple Distribution (standard deviation around sector mean)
+MULTIPLE_STD_DEV = 1.5  # Standard deviation for multiple distribution
 
 # Valuation
 MIN_EBITDA_MULTIPLE = 6.0

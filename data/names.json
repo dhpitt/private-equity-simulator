@@ -56,6 +56,135 @@
       "Group"
     ]
   },
+  "local_business_names": {
+    "prefixes": [
+      "Main Street",
+      "Downtown",
+      "City",
+      "Corner",
+      "Family",
+      "Joe's",
+      "Mom's",
+      "Bob's",
+      "Mike's",
+      "Tony's",
+      "Maria's",
+      "Sam's",
+      "Quick",
+      "Best",
+      "Quality",
+      "Hometown",
+      "Neighborhood",
+      "Village",
+      "Local",
+      "Classic",
+      "Premium",
+      "Elite"
+    ],
+    "descriptors": [
+      "& Sons",
+      "& Daughters",
+      "& Co",
+      "Shop",
+      "Store",
+      "Market",
+      "Emporium",
+      "Company",
+      "Express",
+      "Plus",
+      "Depot",
+      "Center",
+      "Outlet",
+      "Services",
+      "Works",
+      "Pro",
+      "Solutions"
+    ]
+  },
+  "sector_business_types": {
+    "Consumer": [
+      "Liquor Store",
+      "Convenience Store",
+      "Grocery",
+      "Deli",
+      "Bakery",
+      "Coffee Shop",
+      "Cafe",
+      "Pizza",
+      "Diner",
+      "Bar & Grill",
+      "Restaurant",
+      "Food Truck",
+      "Catering"
+    ],
+    "Retail": [
+      "Boutique",
+      "Clothing Store",
+      "Shoe Store",
+      "Furniture",
+      "Electronics",
+      "Pet Store",
+      "Florist",
+      "Gift Shop",
+      "Toy Store",
+      "Bookstore",
+      "Sporting Goods"
+    ],
+    "Healthcare": [
+      "Dental Office",
+      "Medical Clinic",
+      "Pharmacy",
+      "Physical Therapy",
+      "Chiropractic",
+      "Veterinary Clinic",
+      "Optometry",
+      "Urgent Care"
+    ],
+    "Consumer Services": [
+      "Barbershop",
+      "Hair Salon",
+      "Nail Salon",
+      "Spa",
+      "Dry Cleaners",
+      "Laundromat",
+      "Car Wash",
+      "Gym",
+      "Yoga Studio",
+      "Daycare"
+    ],
+    "Industrial": [
+      "Auto Repair",
+      "Auto Body",
+      "Plumbing",
+      "HVAC",
+      "Electrical",
+      "Roofing",
+      "Landscaping",
+      "Tree Service",
+      "Welding",
+      "Machine Shop"
+    ],
+    "Real Estate": [
+      "Property Management",
+      "Real Estate Office",
+      "Title Company",
+      "Appraisal Services"
+    ],
+    "Technology": [
+      "Computer Repair",
+      "IT Services",
+      "Web Design",
+      "Software Consulting",
+      "Tech Support"
+    ],
+    "Financial Services": [
+      "Insurance Agency",
+      "Tax Preparation",
+      "Accounting Services",
+      "Financial Planning",
+      "Bookkeeping"
+    ]
+  },
   "manager_first_names": [
     "Alex",
     "Jordan",

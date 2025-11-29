@@ -39,7 +39,25 @@ class GameEngine:
         self.running = True
         
     def start_game(self) -> None:
-        """Start the game and show intro."""
+        """Start the game and show intro or load menu."""
+        # Check if user wants to load a game
+        from game.save_system import GameSaver
+        
+        saves = GameSaver.list_saves()
+        
+        if saves:
+            print("\n" + "=" * 70)
+            print("WELCOME TO PE SIMULATOR")
+            print("=" * 70)
+            options = ["Start New Game", "Load Saved Game"]
+            choice = ih.prompt_choice(options, "What would you like to do?")
+            
+            if choice == 1:  # Load game
+                self.load_game_menu()
+                self.main_loop()
+                return
+        
+        # New game
         screens.show_intro()
         self.generate_new_deals()
         self.main_loop()
@@ -64,6 +82,11 @@ class GameEngine:
                 self.exit_investment()
             elif action == 'advance':
                 self.advance_quarter()
+            elif action == 'save_continue':
+                self.save_game()
+            elif action == 'save_exit':
+                self.save_game()
+                self.running = False
                 
         # Game over
         self.end_game()
@@ -240,9 +263,17 @@ class GameEngine:
                 self.handle_growth_strategy(company)
                 
     def handle_cost_cutting(self, company: Company) -> None:
-        """Handle cost cutting operation."""
-        print("\nCost Cutting Initiative")
-        print("Higher intensity improves margins but may hurt growth.")
+        """Handle cost cutting operation with narrative."""
+        print("\n" + "=" * 70)
+        print(f"COST CUTTING INITIATIVE: {company.name}")
+        print("=" * 70)
+        print(f"\nSector: {company.sector}")
+        print(f"Current EBITDA Margin: {company.ebitda_margin:.1%}")
+        print(f"Current Growth Rate: {company.growth_rate:+.1%}")
+        print("\nCost Cutting Initiative Impact:")
+        print("  • Higher intensity = Better margins BUT worse growth")
+        print("  • Aggressive cuts risk employee morale and reputation")
+        print("  • Each sector has different cost-cutting approaches")
         
         intensity = ih.prompt_number("Enter intensity (0-100)", min_value=0, max_value=100)
         if intensity is None:
@@ -252,9 +283,32 @@ class GameEngine:
         
         result = portfolio_ops.apply_cost_cutting(company, intensity_normalized)
         
-        print(f"\n{result['message']}")
+        # Display narrative
+        print("\n" + "=" * 70)
+        print("COST-CUTTING ACTION")
+        print("=" * 70)
+        print(f"\n📋 ACTION TAKEN:")
+        print(f"   {result['narrative_action']}")
+        print(f"\n⚠️  IMMEDIATE CONSEQUENCE:")
+        print(f"   {result['narrative_consequence']}")
+        print(f"\n💰 FINANCIAL IMPACT:")
+        print(f"   • EBITDA Margin: {result['margin_improvement']:+.1%}")
+        print(f"   • Growth Rate: {-result['growth_penalty']:.1%}")
+        
         if result.get('morale_impact'):
-            print("Warning: Aggressive cost cutting hurt employee morale.")
+            print(f"\n😞 MORALE IMPACT:")
+            print(f"   Additional growth penalty from poor employee morale")
+            
+        if result.get('reputation_hit', 0) > 0:
+            self.player.adjust_reputation(-result['reputation_hit'])
+            print(f"\n📉 REPUTATION IMPACT:")
+            print(f"   Your reputation decreased by {result['reputation_hit']:.1%}")
+            print(f"   (Now at {self.player.reputation:.0%})")
+        
+        if intensity_normalized > 0.7:
+            print(f"\n⚠️  WARNING: Aggressive cost-cutting may have long-term consequences!")
+        
+        print("=" * 70)
             
         ih.press_enter_to_continue()
         
@@ -413,4 +467,93 @@ class GameEngine:
     def end_game(self) -> None:
         """End the game and show summary."""
         screens.show_endgame_summary(self.player, self.time_manager)
+        
+    def save_game_flow(self) -> bool:
+        """Handle save game flow."""
+        save_name = menus.save_game_menu()
+        
+        if not save_name:
+            return False
+        
+        from game.save_system import save_game
+        
+        if save_game(self, save_name):
+            print(f"\nGame saved as '{save_name}'!")
+            ih.press_enter_to_continue()
+            return True
+        else:
+            print("\nFailed to save game!")
+            ih.press_enter_to_continue()
+            return False
+    
+    def load_game_flow(self) -> bool:
+        """Handle load game flow."""
+        save_name = menus.load_game_menu()
+        
+        if not save_name:
+            return False
+        
+        from game.save_system import load_game
+        
+        if load_game(save_name, self):
+            return True
+        else:
+            print(f"\nFailed to load game '{save_name}'!")
+            ih.press_enter_to_continue()
+            return False
+    
+    def save_game(self) -> None:
+        """Save the current game state."""
+        from game.save_system import GameSaver
+        
+        print("\n" + "=" * 70)
+        print("SAVE GAME")
+        print("=" * 70)
+        
+        save_name = ih.prompt_text("Enter save name (or press Enter for auto-name)", allow_empty=True)
+        
+        try:
+            save_path = GameSaver.save_game(self, save_name)
+            print(f"\n✓ Game saved successfully to: {save_path}")
+        except Exception as e:
+            print(f"\n✗ Error saving game: {e}")
+            
+        ih.press_enter_to_continue()
+    
+    def load_game_menu(self) -> None:
+        """Show load game menu and restore selected save."""
+        from game.save_system import GameSaver
+        
+        saves = GameSaver.list_saves()
+        
+        if not saves:
+            print("\nNo saved games found.")
+            ih.press_enter_to_continue()
+            return
+        
+        print("\n" + "=" * 70)
+        print("LOAD GAME")
+        print("=" * 70)
+        print("\nAvailable Saves:")
+        
+        for i, save in enumerate(saves, 1):
+            print(f"  {i}. {save['name']} (Last modified: {save['modified'].strftime('%Y-%m-%d %H:%M:%S')})")
+        
+        options = [s['name'] for s in saves] + ["Cancel"]
+        choice = ih.prompt_choice(options, "Select a save to load")
+        
+        if choice < 0 or choice >= len(saves):
+            return
+        
+        try:
+            save_name = saves[choice]['name']
+            game_state = GameSaver.load_game(save_name)
+            GameSaver.restore_game(game_state, self)
+            print(f"\n✓ Game loaded successfully from: {save_name}")
+            print(f"   Quarter: {self.time_manager.get_time_display()}")
+            print(f"   Net Worth: ${self.player.compute_net_worth():,.0f}")
+            ih.press_enter_to_continue()
+        except Exception as e:
+            print(f"\n✗ Error loading game: {e}")
+            ih.press_enter_to_continue()
 
