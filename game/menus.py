@@ -1,0 +1,265 @@
+"""
+Menus - user-facing menu system for the game.
+"""
+
+from typing import List, Optional, Dict, Any
+from models.player import Player
+from models.company import Company
+from models.market import Market
+from models.deal import Deal
+from game import input_handlers as ih
+from ui import table_views as tv
+
+
+def main_menu(player: Player, market: Market, time_manager: 'TimeManager') -> str:
+    """
+    Display main menu and get player's action choice.
+    
+    Returns:
+        Action string: 'acquire', 'operate', 'exit', 'portfolio', 'market', 'advance', 'quit'
+    """
+    ih.clear_screen()
+    
+    print("=" * 70)
+    print(f"PRIVATE EQUITY SIMULATOR - {time_manager.get_time_display()}")
+    print("=" * 70)
+    print(f"\nCash: ${player.cash:,.0f}")
+    print(f"Portfolio Value: ${player.compute_portfolio_value():,.0f}")
+    print(f"Net Worth: ${player.compute_net_worth():,.0f}")
+    print(f"Debt: ${player.current_debt:,.0f}")
+    print(f"Portfolio Companies: {len(player.portfolio)}")
+    
+    options = [
+        "View Portfolio",
+        "View Market Conditions",
+        "Acquire Company",
+        "Operate Portfolio Companies",
+        "Exit Investment",
+        "Advance to Next Quarter",
+        "Quit Game"
+    ]
+    
+    actions = ['portfolio', 'market', 'acquire', 'operate', 'exit', 'advance', 'quit']
+    
+    choice = ih.prompt_choice(options, "What would you like to do?")
+    
+    if choice < 0 or choice >= len(actions):
+        return 'quit'
+        
+    return actions[choice]
+
+
+def acquisition_menu(available_companies: List[Company], player: Player, market: Market) -> Optional[Company]:
+    """
+    Display available companies for acquisition.
+    
+    Returns:
+        Selected company or None
+    """
+    if not available_companies:
+        print("\nNo companies available for acquisition this quarter.")
+        ih.press_enter_to_continue()
+        return None
+        
+    ih.clear_screen()
+    print("=" * 70)
+    print("AVAILABLE ACQUISITION TARGETS")
+    print("=" * 70)
+    
+    tv.display_company_list(available_companies)
+    
+    print(f"\nYour available capital: ${player.available_capital():,.0f}")
+    
+    options = [f"{c.name} - ${c.current_valuation:,.0f}" for c in available_companies]
+    options.append("Cancel")
+    
+    choice = ih.prompt_choice(options, "Select a company to review")
+    
+    if choice < 0 or choice >= len(available_companies):
+        return None
+        
+    return available_companies[choice]
+
+
+def deal_negotiation_menu(deal: Deal, player: Player) -> str:
+    """
+    Handle deal negotiation.
+    
+    Returns:
+        Action: 'offer', 'accept', 'walk'
+    """
+    ih.clear_screen()
+    print("=" * 70)
+    print(f"DEAL NEGOTIATION: {deal.company.name}")
+    print("=" * 70)
+    
+    tv.display_company_detail(deal.company)
+    
+    print(f"\n{'Asking Price:':<30} ${deal.asking_price:,.0f}")
+    print(f"{'Fair Value (estimate):':<30} ${deal.fair_value:,.0f}")
+    print(f"{'Your Cash:':<30} ${player.cash:,.0f}")
+    print(f"{'Available Capital:':<30} ${player.available_capital():,.0f}")
+    
+    if deal.current_offer:
+        print(f"{'Your Last Offer:':<30} ${deal.current_offer:,.0f}")
+        
+    print(f"\nNegotiation Rounds Remaining: {deal.max_counter_offers - deal.counter_offers}")
+    
+    options = [
+        f"Accept asking price (${deal.asking_price:,.0f})",
+        "Make an offer",
+        "Walk away"
+    ]
+    
+    actions = ['accept', 'offer', 'walk']
+    
+    choice = ih.prompt_choice(options, "What would you like to do?")
+    
+    if choice < 0 or choice >= len(actions):
+        return 'walk'
+        
+    return actions[choice]
+
+
+def portfolio_menu(player: Player) -> Optional[Company]:
+    """
+    Display portfolio and allow selection of a company.
+    
+    Returns:
+        Selected company or None
+    """
+    if not player.portfolio:
+        print("\nYour portfolio is empty.")
+        ih.press_enter_to_continue()
+        return None
+        
+    ih.clear_screen()
+    print("=" * 70)
+    print("YOUR PORTFOLIO")
+    print("=" * 70)
+    
+    tv.display_portfolio(player.portfolio)
+    
+    print(f"\nTotal Portfolio Value: ${player.compute_portfolio_value():,.0f}")
+    
+    options = [f"{c.name}" for c in player.portfolio]
+    options.append("Back to Main Menu")
+    
+    choice = ih.prompt_choice(options, "Select a company to view details")
+    
+    if choice < 0 or choice >= len(player.portfolio):
+        return None
+        
+    return player.portfolio[choice]
+
+
+def company_operations_menu(company: Company, player: Player) -> str:
+    """
+    Menu for operating on a portfolio company.
+    
+    Returns:
+        Action: 'cost_cutting', 'capex', 'replace_mgmt', 'strategy', 'back'
+    """
+    ih.clear_screen()
+    print("=" * 70)
+    print(f"OPERATIONS: {company.name}")
+    print("=" * 70)
+    
+    tv.display_company_detail(company)
+    
+    options = [
+        "Implement Cost Cutting",
+        "Invest in Capex/Growth",
+        "Replace Management",
+        "Pursue Growth Strategy",
+        "Back"
+    ]
+    
+    actions = ['cost_cutting', 'capex', 'replace_mgmt', 'strategy', 'back']
+    
+    choice = ih.prompt_choice(options, "What operation would you like to perform?")
+    
+    if choice < 0 or choice >= len(actions):
+        return 'back'
+        
+    return actions[choice]
+
+
+def exit_menu(player: Player, market: Market) -> Optional[Company]:
+    """
+    Menu for exiting an investment.
+    
+    Returns:
+        Selected company or None
+    """
+    if not player.portfolio:
+        print("\nYour portfolio is empty.")
+        ih.press_enter_to_continue()
+        return None
+        
+    ih.clear_screen()
+    print("=" * 70)
+    print("EXIT INVESTMENT")
+    print("=" * 70)
+    
+    tv.display_portfolio(player.portfolio)
+    
+    options = [f"{c.name} - Current Value: ${c.current_valuation:,.0f}" for c in player.portfolio]
+    options.append("Cancel")
+    
+    choice = ih.prompt_choice(options, "Select a company to exit")
+    
+    if choice < 0 or choice >= len(player.portfolio):
+        return None
+        
+    return player.portfolio[choice]
+
+
+def market_overview_menu(market: Market) -> None:
+    """Display market conditions overview."""
+    ih.clear_screen()
+    print("=" * 70)
+    print("MARKET CONDITIONS")
+    print("=" * 70)
+    
+    tv.display_market_conditions(market)
+    
+    ih.press_enter_to_continue()
+
+
+def event_menu(event: Dict[str, Any]) -> Optional[str]:
+    """
+    Display an event and get player response.
+    
+    Returns:
+        Player's choice or None
+    """
+    ih.clear_screen()
+    print("=" * 70)
+    print(f"EVENT: {event['title']}")
+    print("=" * 70)
+    
+    print(f"\n{event['description']}\n")
+    
+    if event.get('effects'):
+        print("Effects:")
+        for effect, value in event['effects'].items():
+            if isinstance(value, float):
+                print(f"  • {effect}: {value:+.1%}")
+            else:
+                print(f"  • {effect}: {value}")
+                
+    # If event requires action, present choices
+    if event.get('effects', {}).get('requires_action'):
+        options = [
+            "Address the issue immediately",
+            "Monitor the situation",
+            "Ignore for now"
+        ]
+        choice = ih.prompt_choice(options, "How would you like to respond?")
+        choices = ['immediate', 'monitor', 'ignore']
+        return choices[choice] if 0 <= choice < len(choices) else 'ignore'
+    else:
+        ih.press_enter_to_continue()
+        return None
+

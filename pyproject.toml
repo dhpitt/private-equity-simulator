@@ -1,0 +1,17 @@
+[project]
+name = "pe-sim"
+version = "0.1.0"
+description = "Private Equity Simulator - A terminal-based business simulation game"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "rich>=14.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+pe-sim = "main:main"

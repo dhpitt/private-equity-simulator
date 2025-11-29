@@ -1,0 +1,23 @@
+{
+  "sectors": [
+    "Technology",
+    "Healthcare",
+    "Consumer",
+    "Industrial",
+    "Financial Services",
+    "Energy",
+    "Real Estate",
+    "Retail"
+  ],
+  "sector_descriptions": {
+    "Technology": "Software, hardware, IT services, and tech-enabled businesses",
+    "Healthcare": "Medical devices, pharma, healthcare services, biotech",
+    "Consumer": "Consumer products, food & beverage, personal care",
+    "Industrial": "Manufacturing, distribution, industrial services",
+    "Financial Services": "Insurance, asset management, fintech, payment processing",
+    "Energy": "Oil & gas, renewables, energy services",
+    "Real Estate": "Commercial real estate, REITs, property management",
+    "Retail": "Brick & mortar retail, e-commerce, specialty retail"
+  }
+}
+
