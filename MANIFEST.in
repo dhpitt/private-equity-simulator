@@ -1,0 +1,23 @@
+# Include data files
+include data/*.json
+include data/*.csv
+
+# Include configuration
+include config.py
+
+# Include documentation
+include README.md
+include QUICKSTART.md
+include *.md
+
+# Include license if exists
+include LICENSE*
+
+# Exclude unwanted files
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store
+exclude saves/*
+exclude .git*
+exclude .cursor*
+

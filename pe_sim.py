@@ -3,9 +3,6 @@ Private Equity Simulator - Main Entry Point
 
 A terminal-based simulation game where you manage a private equity fund,
 acquire companies, improve operations, and build portfolio value.
-
-Note: This file can be run directly with `python main.py`.
-For the pip-installed entry point, see pe_sim.py (identical copy).
 """
 
 from game.engine import GameEngine

@@ -22,29 +22,45 @@ You are the managing partner of a private equity fund with limited time and capi
 
 ## Installation
 
+PE Simulator is a pip-installable Python package!
+
 ### Prerequisites
-- Python 3.13+
-- UV package manager (recommended) or pip
+- Python 3.8+ (tested on 3.8-3.13)
+- pip package manager
 
-### Setup
+### Quick Install
 
-1. Clone or download this repository
-
-2. Install dependencies using UV:
 ```bash
-source .venv/bin/activate
-uv pip install -e .
-```
-
-Or using pip:
-```bash
+# Install in editable/development mode (recommended)
 pip install -e .
+
+# Or standard install
+pip install .
 ```
 
-3. For development (includes pytest):
+### Running the Game
+
+After installation, run from anywhere:
 ```bash
-uv pip install -e ".[dev]"
+pe-sim
 ```
+
+Or using Python:
+```bash
+python -m main
+```
+
+### Development Setup
+
+```bash
+# Install with development dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+```
+
+For detailed installation instructions, see [INSTALL.md](INSTALL.md).
 
 ## How to Play
 
