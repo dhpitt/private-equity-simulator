@@ -26,16 +26,24 @@ PE Simulator is a pip-installable Python package!
 
 ### Prerequisites
 - Python 3.8+ (tested on 3.8-3.13)
-- pip package manager
+- uv package manager (recommended) or pip
 
 ### Quick Install
 
 ```bash
+# Activate your virtual environment
+source .venv/bin/activate
+
 # Install in editable/development mode (recommended)
-pip install -e .
+uv pip install -e .
 
 # Or standard install
-pip install .
+uv pip install .
+```
+
+**Using regular pip:**
+```bash
+pip install -e .
 ```
 
 ### Running the Game
@@ -47,20 +55,18 @@ pe-sim
 
 Or using Python:
 ```bash
-python -m main
+python main.py
 ```
 
 ### Development Setup
 
 ```bash
 # Install with development dependencies
-pip install -e ".[dev]"
+uv pip install -e ".[dev]"
 
 # Run tests
 pytest
 ```
-
-For detailed installation instructions, see [INSTALL.md](INSTALL.md).
 
 ## How to Play
 
