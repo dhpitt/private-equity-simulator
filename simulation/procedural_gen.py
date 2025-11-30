@@ -5,7 +5,8 @@ Procedural generation for companies, managers, and content.
 import random
 import json
 import os
-from typing import Dict, List, Any
+import csv
+from typing import Dict, List, Any, Optional
 from models.company import Company
 from models.manager import Manager
 import config
@@ -20,6 +21,53 @@ def load_data_file(filename: str) -> Dict:
     except FileNotFoundError:
         # Return defaults if file doesn't exist yet
         return {}
+
+
+def load_sp500_companies() -> List[Dict[str, str]]:
+    """Load real S&P 500 companies from CSV file."""
+    data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'real_sp500.csv')
+    companies = []
+    
+    try:
+        with open(data_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get('Symbol'):  # Skip empty rows
+                    companies.append(row)
+    except FileNotFoundError:
+        print(f"Warning: Could not find S&P 500 data file")
+        return []
+    
+    return companies
+
+
+# Cache for S&P 500 companies to avoid reloading
+_sp500_cache = None
+
+def get_sp500_companies() -> List[Dict[str, str]]:
+    """Get cached S&P 500 companies list."""
+    global _sp500_cache
+    if _sp500_cache is None:
+        _sp500_cache = load_sp500_companies()
+    return _sp500_cache
+
+
+def map_gics_sector_to_game_sector(gics_sector: str) -> str:
+    """Map GICS sector names to game sector names."""
+    sector_mapping = {
+        'Information Technology': 'Technology',
+        'Health Care': 'Healthcare',
+        'Financials': 'Financial Services',
+        'Consumer Discretionary': 'Consumer',
+        'Consumer Staples': 'Consumer',
+        'Industrials': 'Industrial',
+        'Energy': 'Energy',
+        'Materials': 'Industrial',
+        'Real Estate': 'Real Estate',
+        'Utilities': 'Energy',
+        'Communication Services': 'Technology',
+    }
+    return sector_mapping.get(gics_sector, 'Industrial')
 
 
 def get_sectors() -> List[str]:
@@ -77,23 +125,89 @@ def get_sector_business_types() -> Dict[str, List[str]]:
     })
 
 
-def generate_company_name(sector: str = None, style: str = 'corporate') -> str:
+def generate_corporate_name(sector: str = None) -> str:
     """
-    Generate a random company name.
+    Generate a corporate-style name, optionally sector-specific.
     
     Args:
-        sector: Company sector (optional, used for local business names)
-        style: 'corporate' for traditional names, 'local' for local business names
+        sector: Company sector (50% chance to use sector-specific components)
     
     Returns:
-        Generated company name
+        Generated corporate name
     """
-    if style == 'local':
-        return generate_local_business_name(sector)
-    
-    # Corporate style names
     names = get_company_names()
     
+    # 50% chance to use sector-specific name components
+    use_sector = sector and random.random() < 0.5
+    
+    if use_sector:
+        # Sector-specific corporate names
+        sector_components = {
+            'Technology': {
+                'prefixes': ['Tech', 'Digital', 'Cyber', 'Data', 'Cloud', 'Smart', 'Net', 'Quantum', 'Apex'],
+                'roots': ['Systems', 'Solutions', 'Software', 'Innovations', 'Networks', 'Dynamics', 'Logic', 'Core'],
+                'suffixes': ['Inc', 'Corp', 'Technologies', 'Labs', 'Group', 'LLC']
+            },
+            'Healthcare': {
+                'prefixes': ['Health', 'Care', 'Med', 'Life', 'Vital', 'Wellness', 'Premier', 'Advanced'],
+                'roots': ['Partners', 'Systems', 'Solutions', 'Services', 'Group', 'Associates', 'Care', 'Medical'],
+                'suffixes': ['Inc', 'LLC', 'Corp', 'Group', 'Associates']
+            },
+            'Food & Beverage': {
+                'prefixes': ['Gourmet', 'Fresh', 'Quality', 'Artisan', 'Premium', 'Natural', 'Organic'],
+                'roots': ['Foods', 'Brands', 'Distributors', 'Group', 'Products', 'Beverages', 'Provisions'],
+                'suffixes': ['Inc', 'LLC', 'Corp', 'Co']
+            },
+            'Retail & Consumer': {
+                'prefixes': ['Retail', 'Consumer', 'Market', 'Trade', 'Commerce', 'Value', 'Choice'],
+                'roots': ['Group', 'Partners', 'Holdings', 'Brands', 'Concepts', 'Ventures', 'Enterprises'],
+                'suffixes': ['Inc', 'Corp', 'LLC', 'Group']
+            },
+            'Home Services': {
+                'prefixes': ['Home', 'Pro', 'Elite', 'Premier', 'Quality', 'Master', 'Expert'],
+                'roots': ['Services', 'Solutions', 'Group', 'Contractors', 'Pros', 'Team', 'Works'],
+                'suffixes': ['Inc', 'LLC', 'Corp', 'Group']
+            },
+            'Auto Services': {
+                'prefixes': ['Auto', 'Motor', 'Drive', 'Precision', 'Quality', 'Pro', 'Express'],
+                'roots': ['Services', 'Group', 'Care', 'Solutions', 'Works', 'Systems', 'Center'],
+                'suffixes': ['Inc', 'LLC', 'Corp', 'Group']
+            },
+            'Personal Services': {
+                'prefixes': ['Personal', 'Elite', 'Premier', 'Lifestyle', 'Signature', 'Prestige'],
+                'roots': ['Services', 'Group', 'Solutions', 'Concepts', 'Care', 'Wellness', 'Studio'],
+                'suffixes': ['Inc', 'LLC', 'Corp', 'Group']
+            },
+            'Professional Services': {
+                'prefixes': ['Professional', 'Strategic', 'Premier', 'Executive', 'Global', 'Integrated'],
+                'roots': ['Services', 'Consulting', 'Advisors', 'Partners', 'Group', 'Associates', 'Solutions'],
+                'suffixes': ['Inc', 'LLC', 'LLP', 'Corp']
+            },
+            'Real Estate': {
+                'prefixes': ['Property', 'Realty', 'Capital', 'Equity', 'Prime', 'Metro', 'Urban'],
+                'roots': ['Group', 'Partners', 'Holdings', 'Properties', 'Capital', 'Ventures', 'Trust'],
+                'suffixes': ['Inc', 'LLC', 'REIT', 'Corp']
+            },
+            'Manufacturing': {
+                'prefixes': ['Industrial', 'Precision', 'Advanced', 'Quality', 'Apex', 'Premier'],
+                'roots': ['Manufacturing', 'Industries', 'Products', 'Components', 'Systems', 'Works'],
+                'suffixes': ['Inc', 'Corp', 'LLC', 'Group']
+            }
+        }
+        
+        components = sector_components.get(sector)
+        if components:
+            prefix = random.choice(components['prefixes'])
+            root = random.choice(components['roots'])
+            
+            # Sometimes add suffix
+            if random.random() > 0.5:
+                suffix = random.choice(components['suffixes'])
+                return f"{prefix} {root} {suffix}"
+            else:
+                return f"{prefix} {root}"
+    
+    # Generic corporate name (50% chance or if no sector)
     prefix = random.choice(names.get('prefixes', ['Global']))
     root = random.choice(names.get('roots', ['Industries']))
     
@@ -103,6 +217,23 @@ def generate_company_name(sector: str = None, style: str = 'corporate') -> str:
         return f"{prefix} {root} {suffix}"
     else:
         return f"{prefix} {root}"
+
+
+def generate_company_name(sector: str = None, style: str = 'corporate') -> str:
+    """
+    Generate a random company name.
+    
+    Args:
+        sector: Company sector (used for sector-specific naming)
+        style: 'corporate' for traditional names, 'local' for local business names
+    
+    Returns:
+        Generated company name
+    """
+    if style == 'local':
+        return generate_local_business_name(sector)
+    else:
+        return generate_corporate_name(sector)
 
 
 def generate_local_business_name(sector: str = None) -> str:
@@ -157,6 +288,61 @@ def generate_local_business_name(sector: str = None) -> str:
             simple_prefixes = ["Quality", "Best", "Premium"]
         prefix = random.choice(simple_prefixes)
         return f"{prefix} {business_type}"
+
+
+def generate_company_from_sp500(sp500_data: Dict[str, str], target_valuation: float) -> Company:
+    """
+    Generate a company based on real S&P 500 data.
+    
+    Args:
+        sp500_data: Dictionary with company data from CSV
+        target_valuation: Target valuation for the company
+        
+    Returns:
+        Company object based on S&P 500 company
+    """
+    # Map GICS sector to game sector
+    game_sector = map_gics_sector_to_game_sector(sp500_data.get('GICS Sector', 'Industrials'))
+    
+    # Use real company name
+    company_name = sp500_data['Security']
+    
+    # Generate realistic financials based on target valuation
+    # Assume a reasonable EBITDA multiple for calculation
+    typical_multiple = random.uniform(12.0, 18.0)  # Higher multiples for S&P 500 companies
+    ebitda = target_valuation / typical_multiple
+    
+    # Work backwards to revenue
+    ebitda_margin = random.uniform(0.20, 0.35)  # S&P 500 companies typically have better margins
+    revenue = ebitda / ebitda_margin
+    
+    # S&P 500 companies tend to have more moderate growth rates
+    growth_rate = random.uniform(0.03, 0.12)  # 3-12% growth
+    
+    # Higher quality, lower volatility for established companies
+    volatility = random.uniform(0.05, 0.15)  # Lower volatility than average
+    
+    # Create manager with real CEO name if available
+    manager = Manager()
+    if sp500_data.get('CEO'):
+        # Override the generated name with the real CEO
+        manager.name = sp500_data['CEO']
+    
+    # Use typical_multiple from above (already calculated as 12-18)
+    valuation_multiple = typical_multiple
+    
+    company = Company(
+        name=company_name,
+        sector=game_sector,
+        revenue=revenue,
+        ebitda_margin=ebitda_margin,
+        growth_rate=growth_rate,
+        volatility=volatility,
+        manager=manager,
+        valuation_multiple=valuation_multiple
+    )
+    
+    return company
 
 
 def generate_company(sector: str = None, revenue_range: tuple = None, 
@@ -371,12 +557,15 @@ def generate_tiered_deal_portfolio(market: 'Market') -> Dict[str, Dict[str, List
     portfolio = {}
     sectors = get_sectors()
     
-    # Define valuation tiers (based on enterprise value)
+    # Define valuation tiers (based on market cap / enterprise value)
     tiers = {
-        'micro': (500_000, 2_000_000),      # $500K - $2M
-        'small': (2_000_000, 5_000_000),    # $2M - $5M
-        'medium': (5_000_000, 15_000_000),  # $5M - $15M
-        'large': (15_000_000, 50_000_000),  # $15M - $50M
+        'local': (500_000, 5_000_000),                      # $500K - $5M (local businesses)
+        'regional': (5_000_000, 50_000_000),                # $5M - $50M (regional businesses)
+        'micro-cap': (50_000_000, 200_000_000),             # $50M - $200M
+        'small-cap': (200_000_000, 2_000_000_000),          # $200M - $2B
+        'mid-cap': (2_000_000_000, 10_000_000_000),         # $2B - $10B
+        'large-cap': (10_000_000_000, 200_000_000_000),     # $10B - $200B (S&P 500 mix)
+        'mega-cap': (200_000_000_000, 2_000_000_000_000),   # $200B - $2T (mostly S&P 500)
     }
     
     # Generate 2-3 companies per sector per tier
@@ -393,27 +582,51 @@ def generate_tiered_deal_portfolio(market: 'Market') -> Dict[str, Dict[str, List
                 # Target a valuation within this tier
                 target_valuation = random.uniform(min_val, max_val)
                 
-                # Work backwards: valuation = EBITDA * multiple
-                # Get sector multiple from market if available
-                if market and hasattr(market, 'sector_multiples'):
-                    sector_multiple = market.sector_multiples.get(sector, 10.0)
-                else:
-                    sector_multiple = 10.0
+                # For large-cap and mega-cap, use 75% real S&P 500 companies, 25% procedural
+                use_sp500 = tier_name in ['large-cap', 'mega-cap'] and random.random() < 0.75
                 
-                # Add some variance to the multiple
-                company_multiple = sector_multiple * random.uniform(0.8, 1.2)
+                if use_sp500:
+                    # Get S&P 500 companies
+                    sp500_companies = get_sp500_companies()
+                    
+                    if sp500_companies:
+                        # Filter by matching game sector
+                        matching_companies = [
+                            c for c in sp500_companies 
+                            if map_gics_sector_to_game_sector(c.get('GICS Sector', '')) == sector
+                        ]
+                        
+                        if matching_companies:
+                            # Select a random S&P 500 company from this sector
+                            sp500_data = random.choice(matching_companies)
+                            company = generate_company_from_sp500(sp500_data, target_valuation)
+                        else:
+                            # Fallback to procedural if no matching sector
+                            use_sp500 = False
                 
-                # target_valuation = revenue * margin * multiple
-                # So revenue = target_valuation / (margin * multiple)
-                typical_margin = random.uniform(0.15, 0.25)
-                target_revenue = target_valuation / (typical_margin * company_multiple)
-                
-                # Clamp to configured range
-                target_revenue = max(config.MIN_COMPANY_REVENUE, 
-                                   min(config.MAX_COMPANY_REVENUE, target_revenue))
-                
-                # Generate company with this target revenue
-                company = generate_company(sector, revenue_range=(target_revenue * 0.9, target_revenue * 1.1))
+                if not use_sp500:
+                    # Procedural generation
+                    # Work backwards: valuation = EBITDA * multiple
+                    # Get sector multiple from market if available
+                    if market and hasattr(market, 'sector_multiples'):
+                        sector_multiple = market.sector_multiples.get(sector, 10.0)
+                    else:
+                        sector_multiple = 10.0
+                    
+                    # Add some variance to the multiple
+                    company_multiple = sector_multiple * random.uniform(0.8, 1.2)
+                    
+                    # target_valuation = revenue * margin * multiple
+                    # So revenue = target_valuation / (margin * multiple)
+                    typical_margin = random.uniform(0.15, 0.25)
+                    target_revenue = target_valuation / (typical_margin * company_multiple)
+                    
+                    # Clamp to configured range
+                    target_revenue = max(config.MIN_COMPANY_REVENUE, 
+                                       min(config.MAX_COMPANY_REVENUE, target_revenue))
+                    
+                    # Generate company with this target revenue
+                    company = generate_company(sector, revenue_range=(target_revenue * 0.9, target_revenue * 1.1))
                 
                 # Calculate actual valuation
                 if market:

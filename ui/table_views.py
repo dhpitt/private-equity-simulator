@@ -8,6 +8,8 @@ from rich.table import Table
 from rich.panel import Panel
 from models.company import Company
 from models.market import Market
+from config import DIFFICULTY_SETTINGS
+from models.player import Player
 
 console = Console()
 
@@ -172,6 +174,16 @@ def display_market_conditions(market: Market) -> None:
     conditions_table.add_column("Metric", style="cyan")
     conditions_table.add_column("Value", style="bold")
     
+    # Highlight multiple trend with color coding
+    multiple_trend_pct = (market.multiple_trend - 1.0) * 100
+    if market.multiple_trend > 1.05:
+        trend_str = f"[bold green]{market.multiple_trend:.3f} ({multiple_trend_pct:+.1f}%) 📈 BULL[/bold green]"
+    elif market.multiple_trend < 0.95:
+        trend_str = f"[bold red]{market.multiple_trend:.3f} ({multiple_trend_pct:+.1f}%) 📉 BEAR[/bold red]"
+    else:
+        trend_str = f"[yellow]{market.multiple_trend:.3f} ({multiple_trend_pct:+.1f}%) → NEUTRAL[/yellow]"
+    
+    conditions_table.add_row("Valuation Multiple Trend", trend_str)
     conditions_table.add_row("Interest Rate", f"{market.interest_rate:.2%}")
     conditions_table.add_row("Market Growth Rate", f"{market.growth_rate:+.2%} quarterly")
     conditions_table.add_row("Credit Conditions", f"{market.credit_conditions:.1%}")
@@ -200,9 +212,13 @@ def display_market_conditions(market: Market) -> None:
         console.print(Panel("[bold yellow]📊 Market conditions are STABLE[/bold yellow]"))
 
 
-def display_player_summary(player: 'Player') -> None:
+def display_player_summary(player: Player) -> None:
     """Display player financial summary."""
-    summary_table = Table(title="Your Financial Summary")
+    # Get difficulty name
+    difficulty_name = DIFFICULTY_SETTINGS.get(player.difficulty, DIFFICULTY_SETTINGS['medium'])['name']
+    
+    title = f"[bold cyan]{player.fund_name}[/bold cyan] | {difficulty_name} Mode"
+    summary_table = Table(title=title)
     
     summary_table.add_column("Metric", style="cyan")
     summary_table.add_column("Value", style="bold green")
@@ -223,7 +239,7 @@ def display_player_summary(player: 'Player') -> None:
     console.print(summary_table)
 
 
-def display_deal_history(player: 'Player') -> None:
+def display_deal_history(player: Player) -> None:
     """Display player's deal history."""
     if not player.deal_history:
         console.print("[dim]No deals completed yet.[/dim]")

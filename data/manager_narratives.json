@@ -1,0 +1,143 @@
+{
+  "quarterly_performance": {
+    "high_competence_positive": [
+      "{manager} executed brilliantly this quarter, capturing market opportunities.",
+      "{manager}'s strategic decisions drove exceptional performance.",
+      "Under {manager}'s leadership, the company significantly outperformed.",
+      "{manager} demonstrated masterful execution across all departments."
+    ],
+    "high_competence_neutral": [
+      "{manager} maintained steady operations with disciplined execution.",
+      "{manager}'s competent leadership kept the company on track.",
+      "Solid quarter under {manager}'s capable management."
+    ],
+    "low_competence_negative": [
+      "{manager} made several poor strategic decisions that hurt performance.",
+      "Weak execution by {manager} resulted in missed opportunities.",
+      "{manager}'s management shortcomings became apparent this quarter.",
+      "The company underperformed due to {manager}'s inadequate leadership."
+    ],
+    "high_risk_success": [
+      "{manager}'s bold risks paid off spectacularly!",
+      "Aggressive moves by {manager} delivered outsized returns.",
+      "{manager} took calculated risks that exceeded expectations."
+    ],
+    "high_risk_failure": [
+      "{manager}'s risky bets backfired badly.",
+      "Aggressive strategies by {manager} blew up in spectacular fashion.",
+      "{manager}'s reckless approach led to significant losses."
+    ],
+    "low_cooperativeness_issue": [
+      "{manager} resisted implementing your strategic directives.",
+      "Friction with {manager} slowed execution of key initiatives.",
+      "{manager}'s stubbornness created operational inefficiencies."
+    ]
+  },
+  
+  "firing": {
+    "cooperative": [
+      "{old_manager} handled their departure professionally, facilitating a smooth transition.",
+      "Parting ways with {old_manager} was amicable; they wished the company well.",
+      "{old_manager} agreed the timing was right for new leadership.",
+      "In a cordial meeting, {old_manager} accepted the transition gracefully."
+    ],
+    "uncooperative": [
+      "{old_manager} fought the decision, threatening litigation and demanding a larger severance.",
+      "Removing {old_manager} was ugly - they poisoned morale on the way out.",
+      "{old_manager} refused to go quietly, leaking damaging information to the press.",
+      "The termination of {old_manager} required extensive legal wrangling and damaged your reputation."
+    ],
+    "competent_loss": [
+      "Losing {old_manager}'s expertise will be felt for several quarters.",
+      "Employees are nervous about {old_manager}'s departure - they were well-respected.",
+      "The market reacted negatively to {old_manager}'s exit."
+    ],
+    "incompetent_relief": [
+      "Employees are relieved to see {old_manager} go - morale immediately improved.",
+      "The board expressed unanimous support for removing {old_manager}.",
+      "Finally addressing the {old_manager} problem was long overdue."
+    ]
+  },
+  
+  "hiring": {
+    "high_competence": [
+      "{new_manager} comes with an impressive track record and immediately commands respect.",
+      "The team is energized by {new_manager}'s vision and expertise.",
+      "{new_manager} brings a wealth of industry experience and best practices.",
+      "Analysts are bullish on the company under {new_manager}'s leadership."
+    ],
+    "low_competence": [
+      "{new_manager} seems overwhelmed by the role's complexity.",
+      "Early signs suggest {new_manager} may not be up to the challenge.",
+      "The team is skeptical of {new_manager}'s ability to execute.",
+      "{new_manager}'s lack of relevant experience is concerning."
+    ],
+    "high_risk": [
+      "{new_manager} is known for bold, unconventional strategies.",
+      "Expect volatility - {new_manager} doesn't shy away from big bets.",
+      "{new_manager}'s aggressive style could pay off big or blow up spectacularly."
+    ],
+    "high_cooperativeness": [
+      "{new_manager} is eager to collaborate and implement your strategic vision.",
+      "Early meetings with {new_manager} went exceptionally well - they're a true partner.",
+      "{new_manager}'s flexibility and responsiveness will make them easy to work with."
+    ],
+    "low_cooperativeness": [
+      "{new_manager} has strong opinions and won't be easily directed.",
+      "Expect resistance - {new_manager} is known for being headstrong.",
+      "{new_manager} made it clear they'll run things their way."
+    ]
+  },
+  
+  "candidate_archetypes": {
+    "the_operator": {
+      "title": "The Operator",
+      "description": "A competent, detail-oriented manager focused on execution",
+      "competence_range": [0.7, 0.9],
+      "risk_range": [0.2, 0.4],
+      "coop_range": [0.6, 0.8],
+      "pitch": "Steady hand, proven track record, no drama."
+    },
+    "the_visionary": {
+      "title": "The Visionary",
+      "description": "A bold strategic thinker who takes big swings",
+      "competence_range": [0.6, 0.8],
+      "risk_range": [0.7, 0.95],
+      "coop_range": [0.4, 0.6],
+      "pitch": "High risk, high reward. Will either 10x or blow up."
+    },
+    "the_yes_person": {
+      "title": "The Yes-Person",
+      "description": "Extremely cooperative but lacks independent capability",
+      "competence_range": [0.4, 0.6],
+      "risk_range": [0.2, 0.4],
+      "coop_range": [0.85, 0.95],
+      "pitch": "Will do exactly what you say - for better or worse."
+    },
+    "the_star": {
+      "title": "The Star",
+      "description": "Exceptional talent but notoriously difficult to manage",
+      "competence_range": [0.85, 0.95],
+      "risk_range": [0.5, 0.7],
+      "coop_range": [0.2, 0.4],
+      "pitch": "Best in class, knows it, won't listen to you."
+    },
+    "the_turnaround_artist": {
+      "title": "The Turnaround Artist",
+      "description": "Specializes in fixing broken companies with aggressive tactics",
+      "competence_range": [0.7, 0.85],
+      "risk_range": [0.6, 0.8],
+      "coop_range": [0.5, 0.7],
+      "pitch": "Will cut hard and move fast. Not gentle."
+    },
+    "the_safe_choice": {
+      "title": "The Safe Choice",
+      "description": "Won't wow you but won't disappoint either",
+      "competence_range": [0.5, 0.7],
+      "risk_range": [0.3, 0.5],
+      "coop_range": [0.6, 0.8],
+      "pitch": "Solid B+ performer. No surprises."
+    }
+  }
+}
+

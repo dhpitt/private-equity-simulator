@@ -9,12 +9,22 @@ import config
 class Player:
     """Represents the player managing the PE fund."""
     
-    def __init__(self, starting_cash: float = None):
+    def __init__(self, starting_cash: float = None, fund_name: str = None, difficulty: str = 'medium'):
         self.cash = starting_cash if starting_cash is not None else config.STARTING_CAPITAL
         self.current_debt = 0.0
         self.portfolio: List['Company'] = []
-        self.reputation = config.STARTING_REPUTATION  # Start with low reputation
+        self.fund_name = fund_name or "Unnamed Fund"
+        self.difficulty = difficulty
+        
+        # Apply difficulty-based reputation adjustment
+        difficulty_settings = config.DIFFICULTY_SETTINGS.get(difficulty, config.DIFFICULTY_SETTINGS['medium'])
+        base_reputation = config.STARTING_REPUTATION
+        self.reputation = base_reputation + difficulty_settings['starting_reputation_bonus']
+        
         self.deal_history: List[Dict[str, Any]] = []
+        
+        # Tax tracking
+        self.total_taxes_paid = 0.0
         
         # Base debt capacity (grows with reputation and net worth)
         self.base_debt_capacity = config.BASE_DEBT_CAPACITY
@@ -144,4 +154,38 @@ class Player:
         if capacity <= 0:
             return 0.0
         return self.current_debt / capacity
+    
+    def calculate_capital_gains_tax(self, sale_price: float, cost_basis: float) -> float:
+        """
+        Calculate capital gains tax on an investment exit.
+        
+        Args:
+            sale_price: The price the company was sold for
+            cost_basis: The original purchase price
+            
+        Returns:
+            Tax amount owed (0 if loss)
+        """
+        capital_gain = sale_price - cost_basis
+        
+        # Only tax gains, not losses
+        if capital_gain <= 0:
+            return 0.0
+        
+        # Get tax rate from difficulty settings
+        difficulty_settings = config.DIFFICULTY_SETTINGS.get(self.difficulty, config.DIFFICULTY_SETTINGS['medium'])
+        tax_rate = difficulty_settings['capital_gains_tax_rate']
+        
+        tax_owed = capital_gain * tax_rate
+        return tax_owed
+    
+    def pay_taxes(self, tax_amount: float) -> None:
+        """
+        Pay taxes and track total paid.
+        
+        Args:
+            tax_amount: Amount of tax to pay
+        """
+        self.adjust_cash(-tax_amount)
+        self.total_taxes_paid += tax_amount
 

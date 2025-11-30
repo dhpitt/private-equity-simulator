@@ -119,18 +119,20 @@ def apply_capex_investment(company: 'Company', amount: float) -> Dict[str, Any]:
     }
 
 
-def replace_management(company: 'Company', player: 'Player') -> Dict[str, Any]:
+def replace_management(company: 'Company', player: 'Player', selected_manager: 'Manager' = None) -> Dict[str, Any]:
     """
-    Replace company management team.
+    Replace company management team with a selected candidate.
     
     Args:
         company: Company to replace management
         player: Player (for cost and reputation effects)
+        selected_manager: The chosen manager (if None, generates random)
         
     Returns:
-        Dictionary with results
+        Dictionary with results including narratives
     """
     from models.manager import Manager
+    from simulation import manager_system
     
     cost = config.MANAGER_REPLACEMENT_COST
     
@@ -157,30 +159,40 @@ def replace_management(company: 'Company', player: 'Player') -> Dict[str, Any]:
     # Deduct cost
     player.adjust_cash(-cost)
     
-    # Generate new manager
-    new_manager = Manager()
+    # Use selected manager or generate random
+    new_manager = selected_manager if selected_manager else Manager()
     company.manager = new_manager
     
-    # Transition period: temporary growth penalty
-    transition_penalty = random.uniform(0.01, 0.03)
-    company.growth_rate -= transition_penalty
+    # Calculate transition impact
+    impact = manager_system.calculate_transition_impact(old_manager, new_manager)
+    
+    # Apply transition effects
+    company.growth_rate -= impact['transition_penalty']
+    company.volatility += impact['volatility_change']
     
     # HEALTH IMPROVEMENT - better management can improve operational health
-    # Only improves if new manager is better
-    competence_delta = new_manager.competence - old_manager.competence
-    health_improvement = max(0, competence_delta * 0.20)  # Up to 20% if much better
+    health_improvement = max(0, impact['competence_delta'] * 0.20)  # Up to 20% if much better
     company.operational_health = min(1.0, company.operational_health + health_improvement)
+    
+    # Generate narratives
+    firing_narrative = manager_system.get_firing_narrative(old_manager)
+    hiring_narrative = manager_system.get_hiring_narrative(new_manager)
     
     return {
         'success': True,
         'cost': cost,
         'old_manager': old_manager,
         'new_manager': new_manager,
-        'transition_penalty': transition_penalty,
-        'health_improvement': health_improvement,
+        'transition_penalty': impact['transition_penalty'],
+        'long_term_improvement': impact['long_term_improvement'],
+        'volatility_change': impact['volatility_change'],
         'difficult': difficult,
-        'message': f"Management replaced. Cost: ${cost:,.0f}. "
-                  f"Operational health {'improved' if health_improvement > 0 else 'unchanged'}."
+        'health_improvement': health_improvement,
+        'firing_narrative': firing_narrative,
+        'hiring_narrative': hiring_narrative,
+        'message': f"Management transition complete. Growth penalty: -{impact['transition_penalty']:.1%}. "
+                  f"{'⚠️ Additional cost due to difficult termination. ' if difficult else ''}"
+                  f"Health: {'+' if health_improvement > 0 else ''}{health_improvement:.1%}"
     }
 
 

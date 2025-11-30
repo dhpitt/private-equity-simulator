@@ -23,8 +23,9 @@ def generate_event(player: Player, portfolio: List[Company], market: Market) -> 
     Returns:
         Event dictionary or None if no event
     """
-    # Check if event occurs
-    if random.random() > config.EVENT_PROBABILITY:
+    # Check if event occurs (adjusted by difficulty)
+    event_probability = config.EVENT_PROBABILITY * market.difficulty_settings['event_probability_multiplier']
+    if random.random() > event_probability:
         return None
         
     # Determine event type
@@ -39,8 +40,9 @@ def generate_event(player: Player, portfolio: List[Company], market: Market) -> 
         'market_boom'
     ]
     
-    # Crisis events are rarer
-    if random.random() < config.CRISIS_PROBABILITY:
+    # Crisis events are rarer (adjusted by difficulty)
+    crisis_probability = config.CRISIS_PROBABILITY * market.difficulty_settings['crisis_probability_multiplier']
+    if random.random() < crisis_probability:
         event_type = random.choice(['company_crisis', 'market_crash', 'management_issue'])
     else:
         event_type = random.choice(event_types)

@@ -97,13 +97,6 @@ The game ends after 20 quarters. Your final score is based on:
 - **Return Multiple**: Final Net Worth / Starting Capital
 - **Annualized Return**: IRR over the game period
 
-Grade scale:
-- **S (3.0x+)**: Legendary - You're a PE superstar!
-- **A (2.5x-3.0x)**: Excellent - Investors are very happy
-- **B (2.0x-2.5x)**: Very Good - Solid outperformance
-- **C (1.5x-2.0x)**: Good - Respectable returns
-- **D (1.0x-1.5x)**: Modest Success - Better than breaking even
-- **F (<1.0x)**: Loss - Better luck next time
 
 ## Project Structure
 

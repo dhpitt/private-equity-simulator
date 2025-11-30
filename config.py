@@ -6,7 +6,7 @@ Global configuration settings for the PE Simulator game.
 STARTING_CAPITAL = 2_000_000  # $2M (must use debt to acquire)
 STARTING_REPUTATION = 0.20  # Start with low reputation (20%)
 BASE_DEBT_CAPACITY = 10_000_000  # $10M (base capacity)
-GAME_DURATION_QUARTERS = 20  # 5 years
+GAME_DURATION_QUARTERS = 56  # 14 years
 
 # Debt Capacity Dynamics
 DEBT_TO_NET_WORTH_RATIO = 3.0  # Max debt = 3x net worth
@@ -24,7 +24,7 @@ MARKET_VOLATILITY = 0.05  # 5% volatility
 
 # Company Generation
 MIN_COMPANY_REVENUE = 500_000  # $500K (small local businesses)
-MAX_COMPANY_REVENUE = 20_000_000  # $20M
+MAX_COMPANY_REVENUE = 1_000_000_000_000  # $1T (mega-cap maximum revenue)
 MIN_EBITDA_MARGIN = 0.10  # 10%
 MAX_EBITDA_MARGIN = 0.35  # 35%
 MIN_GROWTH_RATE = -0.02  # -2% quarterly
@@ -53,8 +53,45 @@ MIN_MANAGER_COOPERATIVENESS = 0.3
 MAX_MANAGER_COOPERATIVENESS = 1.0
 
 # Events
-EVENT_PROBABILITY = 0.25  # 25% chance of event each quarter
-CRISIS_PROBABILITY = 0.1  # 10% of events are crises
+EVENT_PROBABILITY = 0.25  # 25% chance of event each quarter (medium difficulty)
+CRISIS_PROBABILITY = 0.1  # 10% of events are crises (medium difficulty)
+
+# Difficulty Settings (applied at game start)
+DIFFICULTY_SETTINGS = {
+    'easy': {
+        'name': 'Obama Era',
+        'description': 'Fish in a barrel. Easy credit, stable multiples, rare crises',
+        'market_volatility_multiplier': 0.7,
+        'multiple_trend_volatility': 0.02,  # ±2% instead of ±3%
+        'event_probability_multiplier': 0.7,
+        'crisis_probability_multiplier': 0.5,
+        'starting_reputation_bonus': 0.10,  # Start at 30% instead of 20%
+        'capital_gains_tax_rate': 0.15,  # 15% tax on profits
+        'base_interest_rate': 0.03,  # 3% - easy credit!
+    },
+    'medium': {
+        'name': 'Reagan Era',
+        'description': 'Balanced challenge, realistic market dynamics',
+        'market_volatility_multiplier': 1.0,
+        'multiple_trend_volatility': 0.03,  # Standard ±3%
+        'event_probability_multiplier': 1.0,
+        'crisis_probability_multiplier': 1.0,
+        'starting_reputation_bonus': 0.0,
+        'capital_gains_tax_rate': 0.20,  # 20% tax on profits
+        'base_interest_rate': 0.05,  # 5% - standard rate
+    },
+    'hard': {
+        'name': 'Newsom Era',
+        'description': 'Volatile markets, frequent crises, tough conditions',
+        'market_volatility_multiplier': 1.4,
+        'multiple_trend_volatility': 0.045,  # ±4.5% volatility
+        'event_probability_multiplier': 1.5,
+        'crisis_probability_multiplier': 2.0,
+        'starting_reputation_bonus': -0.05,  # Start at 15% instead of 20%
+        'capital_gains_tax_rate': 0.30,  # 30% tax on profits (brutal!)
+        'base_interest_rate': 0.08,  # 8% - tight credit!
+    }
+}
 
 # Portfolio Operations
 COST_CUTTING_MAX_IMPACT = 0.15  # Up to 15% margin improvement

@@ -29,7 +29,10 @@ class Manager:
         male_first_names = [
             "Braylyn", "Jaxon", "Hunter", "Cuyler", "Landon", "Kason", "Vignesh", "David", "Noah",
             "Moshe", "Elior", "Jacob", "Winston", "Jensen", "Arjun", "Santiago", "Yosef", "Chang",
-            "Rohan", "Isaac", "Haruto", "Brigham", "Ezra", "Aaryan"
+            "Rohan", "Isaac", "Haruto", "Brigham", "Ezra", "Aaryan",
+            "Brontley", "Kevan", "Mickard", "Jorby", "Wendall", "Clance", "Jarm", "Burtby",
+            "Toddle", "Jelmor", "Krig", "Spensly", "Donny", "Horf", "Garm", "Lyle",
+            "Travin", "Glarb", "Denrick", "Vern"
         ]
         female_first_names = [
             "Rebecca", "Skylynn", "Aubree", "Mckynlee", "Hannah", "Lakyn", "Neha", "Sariah", "Rivka",
@@ -39,7 +42,10 @@ class Manager:
         last_names = [
             "Smith", "Johnson", "Brown", "Williams", "Rabinowitz", "Stein", "Lieberman", "Goldberg",
             "Shumway", "Brigham", "Chen", "Wang", "Lee", "Kim", "Chakrabarthy", "Patel", "Venkataraman", 
-            "Kumar", "Martinez", "Garcia", "Davis", "Yang", "Wong", "Gupta", "Avraham", "Kimball", "Tapia"
+            "Kumar", "Martinez", "Garcia", "Davis", "Yang", "Wong", "Gupta", "Avraham", "Kimball", "Tapia",
+            "Sharms", "Brostowitz", "Trunley", "McHaddle", "Krimshaw", "Hunderford", "Smixter", "Clenrose",
+            "Brankman", "Frockling", "McLentock", "Yorban", "Wrickshaw", "McJanders", "Tubson", "Gritbern",
+            "Mulbrecht", "Cavendane", "Tullman", "Sprockley"
         ]
         
         gender = random.choice(['male', 'female'])

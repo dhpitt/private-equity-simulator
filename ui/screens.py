@@ -19,6 +19,108 @@ import config
 console = Console()
 
 
+def get_funny_fund_name_message() -> str:
+    """Get a random funny message for fund name selection."""
+    messages = [
+        "Choose wisely, this is going on all the Patagonias and embroidery ain't cheap.",
+        "This name better be good - we're printing 100,000 business cards.",
+        "Your LPs are gonna see this on every quarterly report. No pressure.",
+        "This will be on your yacht. Make it yacht-worthy.",
+        "Fun fact: 'Synergy Capital' is already taken. Try harder.",
+        "The SEC is watching. Choose accordingly.",
+        "How good would this look on a plaque in Epstein's temple?",
+        "Would this look good on your LinkedIn page?",
+        "WWJD? (What would Jeffrey do?)",
+    ]
+    return random.choice(messages)
+
+
+def select_difficulty() -> str:
+    """Let player select difficulty level."""
+    console.clear()
+    
+    title = Text("SELECT DIFFICULTY", style="bold cyan", justify="center")
+    console.print(title)
+    console.print()
+    
+    difficulty_text = """
+[bold green]1. Obama Era[/bold green] (Easy)
+   • Fish in a barrel. Money is free!
+   • Stable markets (low volatility)
+   • [green]3% interest rate[/green] - easy credit!
+   • Rare crises
+   • Start with 30% reputation
+   • [cyan]15% capital gains tax[/cyan]
+   • Good for learning the game
+   
+[bold yellow]2. Reagan Era[/bold yellow] (Medium)
+   • Balanced market dynamics
+   • [yellow]5% interest rate[/yellow] - standard
+   • Realistic challenges
+   • Standard reputation (20%)
+   • [yellow]20% capital gains tax[/yellow]
+   • Recommended for most players
+   
+[bold red]3. Newsom Era[/bold red] (Hard)
+   • In the People's Republic of California, money is scarce.
+   • Volatile, unpredictable markets
+   • [red]8% interest rate[/red] - tight credit!
+   • Frequent crises
+   • Start with only 15% reputation
+   • [red]30% capital gains tax![/red]
+   • For masochists and legends only
+"""
+    
+    panel = Panel(
+        difficulty_text.strip(),
+        title="Choose Your Difficulty",
+        border_style="cyan",
+        padding=(1, 2)
+    )
+    
+    console.print(panel)
+    console.print()
+    
+    while True:
+        choice = input("Enter your choice (1-3): ").strip()
+        if choice == '1':
+            return 'easy'
+        elif choice == '2':
+            return 'medium'
+        elif choice == '3':
+            return 'hard'
+        else:
+            console.print("[red]Invalid choice. Please enter 1, 2, or 3.[/red]")
+
+
+def select_fund_name() -> str:
+    """Let player name their fund with a funny message."""
+    console.clear()
+    
+    title = Text("NAME YOUR FUND", style="bold cyan", justify="center")
+    console.print(title)
+    console.print()
+    
+    funny_message = get_funny_fund_name_message()
+    console.print(Panel(funny_message, style="italic yellow", border_style="yellow"))
+    console.print()
+    
+    while True:
+        fund_name = input("Enter your fund name: ").strip()
+        if fund_name:
+            # Show confirmation
+            console.print()
+            console.print(f"[bold cyan]{fund_name}[/bold cyan]")
+            console.print()
+            confirm = input("Is this correct? (y/n): ").strip().lower()
+            if confirm == 'y':
+                return fund_name
+            else:
+                console.print("\nLet's try again...\n")
+        else:
+            console.print("[red]Fund name cannot be empty. Try again.[/red]")
+
+
 def load_quotes():
     """Load inspirational quotes from JSON file."""
     quotes_path = Path(__file__).parent.parent / 'data' / 'quotes.json'
@@ -61,25 +163,29 @@ def show_quote_screen():
     time.sleep(2.5)
 
 
-def show_intro() -> None:
+def show_intro(player: Player, market: Market) -> None:
     """Show game introduction screen."""
     console.clear()
     
     title = Text("PRIVATE EQUITY SIMULATOR", style="bold cyan", justify="center")
     
+    # Get difficulty info
+    difficulty_name = config.DIFFICULTY_SETTINGS[player.difficulty]['name']
+    difficulty_desc = config.DIFFICULTY_SETTINGS[player.difficulty]['description']
+    
     # Calculate starting debt capacity for intro
-    starting_net_worth = config.STARTING_CAPITAL
-    reputation_factor = 0.5 + (1.0 * config.REPUTATION_DEBT_MULTIPLIER - 0.5)  # Max reputation
-    starting_capacity = config.BASE_DEBT_CAPACITY + (starting_net_worth * config.DEBT_TO_NET_WORTH_RATIO * reputation_factor)
-    starting_capacity = max(config.MIN_DEBT_CAPACITY, starting_capacity)
+    starting_capacity = player.get_debt_capacity()
     
     intro_text = f"""
 Welcome to the Private Equity Simulator!
 
-You are the managing partner of a new private equity fund with:
+[bold cyan]{player.fund_name}[/bold cyan]
+Difficulty: [bold]{difficulty_name}[/bold] - {difficulty_desc}
+
+You are the managing partner of this fund with:
   • ${config.STARTING_CAPITAL:,.0f} in starting capital
   • ${starting_capacity:,.0f} initial debt capacity
-  • {config.STARTING_REPUTATION:.0%} starting reputation (build this through profits!)
+  • {player.reputation:.0%} starting reputation (build this through profits!)
   • {config.GAME_DURATION_QUARTERS} quarters ({config.GAME_DURATION_QUARTERS // 4} years) to build your portfolio
 
 Your goal is to maximize your fund's value by:
@@ -95,7 +201,7 @@ Key Mechanics:
   • One operation per company per quarter (choose wisely!)
   • Success breeds more opportunity!
 
-Good luck!
+Good luck, and may the markets be ever in your favor!
 """
     
     panel = Panel(
@@ -134,6 +240,9 @@ def show_endgame_summary(player: Player, time_manager: TimeManager) -> None:
         annualized_return = 0
         
     # Results panel
+    difficulty_settings = config.DIFFICULTY_SETTINGS.get(player.difficulty, config.DIFFICULTY_SETTINGS['medium'])
+    tax_rate = difficulty_settings['capital_gains_tax_rate']
+    
     results_text = f"""
 Final Results after {time_manager.current_quarter} quarters ({years:.1f} years):
 
@@ -150,28 +259,36 @@ PORTFOLIO:
   Portfolio Value:      ${player.compute_portfolio_value():>15,.0f}
   Total Deals:          {len(player.deal_history):>15}
   
+TAXES:
+  Capital Gains Tax Rate: {tax_rate:>13.0%}
+  Total Taxes Paid:     ${player.total_taxes_paid:>15,.0f}
+  
 REPUTATION:           {player.reputation:>15.1%}
     """
     
-    # Determine grade
-    if return_multiple >= 3.0:
-        grade = "S - Legendary"
+    # Determine grade based on ABSOLUTE NET WORTH (not multiples)
+    # The grade tiers now match the commentary gates below
+    if final_net_worth >= 100_000_000_000:  # $100B+
+        grade = "S+ - ULTIMATE PE LEGEND"
+        grade_style = "bold bright_magenta"
+    elif final_net_worth >= 10_000_000_000:  # $10B+
+        grade = "S - LEGENDARY PE TITAN"
+        grade_style = "bold bright_magenta"
+    elif final_net_worth >= 1_000_000_000:  # $1B+
+        grade = "A - PE SUPERSTAR"
         grade_style = "bold bright_green"
-    elif return_multiple >= 2.5:
-        grade = "A - Excellent"
+    elif final_net_worth >= 100_000_000:  # $100M+
+        grade = "B - Excellent Performance"
         grade_style = "bold green"
-    elif return_multiple >= 2.0:
-        grade = "B - Very Good"
-        grade_style = "green"
-    elif return_multiple >= 1.5:
-        grade = "C - Good"
+    elif final_net_worth >= 10_000_000:  # $10M+
+        grade = "C - Solid Performance"
         grade_style = "yellow"
-    elif return_multiple >= 1.0:
-        grade = "D - Modest Success"
-        grade_style = "yellow"
-    else:
-        grade = "F - Loss"
+    elif final_net_worth >= 1_000_000:  # $1M+
+        grade = "D - Mediocre Performance"
         grade_style = "red"
+    else:  # < $1M (less than starting capital)
+        grade = "F - LOSS"
+        grade_style = "bold red"
         
     console.print(Panel(results_text.strip(), title="Final Score", border_style="cyan"))
     console.print()
@@ -186,17 +303,19 @@ REPUTATION:           {player.reputation:>15.1%}
     display_deal_history(player)
     console.print()
     
-    # Commentary
-    if return_multiple >= 3.0:
-        comment = "Outstanding performance! You're a PE superstar!"
-    elif return_multiple >= 2.0:
-        comment = "Excellent work! Your investors are very happy."
-    elif return_multiple >= 1.5:
-        comment = "Good job! You've delivered solid returns."
-    elif return_multiple >= 1.0:
-        comment = "Modest returns. Room for improvement."
+    # Commentary based on absolute wealth achieved
+    if final_net_worth >= 100_000_000_000:  # $100B+
+        comment = "Legendary. Leon Black core. Epstein's calling you back."
+    elif final_net_worth >= 10_000_000_000:  # $10B+
+        comment = "Nicely done. You're in the billionaire's club."
+    elif final_net_worth >= 1_000_000_000:  # $1B+
+        comment = "Decent work. Technically a billionaire, but they all make fun of you at Davos."
+    elif final_net_worth >= 100_000_000:  # $100M+
+        comment = "Solid work. You're making real money. Keep scaling."
+    elif final_net_worth >= 10_000_000:  # $10M+
+        comment = "You barely beat the market. ."
     else:
-        comment = "Tough market. Better luck next time."
+        comment = "You lost to SPY. Time to find a new career."
         
     console.print(Panel(comment, style="italic", border_style="dim"))
     console.print()

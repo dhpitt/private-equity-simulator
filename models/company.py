@@ -74,10 +74,13 @@ class Company:
         """Current EBITDA."""
         return self.revenue * self.ebitda_margin
         
-    def simulate_quarter(self, market_conditions: Dict[str, Any]) -> None:
+    def simulate_quarter(self, market_conditions: Dict[str, Any]) -> Dict[str, Any]:
         """
         Simulate one quarter of company performance.
         Updates revenue based on growth rate, volatility, manager performance, and market.
+        
+        Returns:
+            Dictionary with performance details including manager impact narrative
         """
         # Base growth from company's inherent rate
         growth = self.growth_rate
@@ -96,6 +99,7 @@ class Company:
         growth += noise
         
         # Apply growth to revenue
+        old_revenue = self.revenue
         self.revenue *= (1 + growth)
         self.revenue = max(0, self.revenue)  # Can't go negative
         
@@ -107,22 +111,87 @@ class Company:
         self.revenue_history.append(self.revenue)
         self.ebitda_history.append(self.ebitda)
         
+        # Return performance details for narrative generation
+        return {
+            'growth': growth,
+            'manager_impact': manager_impact,
+            'old_revenue': old_revenue,
+            'new_revenue': self.revenue
+        }
+        
+    def get_growth_quality_adjustment(self) -> float:
+        """
+        PHASE 3: Calculate multiple adjustment based on recent growth performance.
+        Sustained growth = multiple expansion, decline = compression.
+        
+        Returns:
+            Multiplier (0.92 to 1.08) based on 3-quarter average growth
+        """
+        if len(self.revenue_history) < 4:
+            return 1.0  # Not enough history
+        
+        # Calculate average growth over last 3 quarters
+        recent_growth_rates = []
+        for i in range(-3, 0):
+            if self.revenue_history[i-1] > 0:
+                growth = (self.revenue_history[i] - self.revenue_history[i-1]) / self.revenue_history[i-1]
+                recent_growth_rates.append(growth)
+        
+        if not recent_growth_rates:
+            return 1.0
+        
+        avg_growth = sum(recent_growth_rates) / len(recent_growth_rates)
+        
+        # High sustained growth = multiple expansion
+        if avg_growth > 0.06:  # 6%+ average quarterly growth
+            return 1.08  # +8% multiple bonus
+        elif avg_growth > 0.03:  # 3-6% growth
+            return 1.04  # +4% multiple bonus
+        elif avg_growth < -0.03:  # Declining revenue
+            return 0.92  # -8% multiple penalty
+        elif avg_growth < 0:  # Slightly negative
+            return 0.96  # -4% multiple penalty
+        else:
+            return 1.0  # Flat performance
+    
     def calculate_valuation(self, market: 'Market' = None) -> float:
         """
-        Calculate company valuation using EBITDA multiple.
-        Uses company-specific multiple if available, otherwise uses sector multiple from market.
+        Calculate company valuation using EBITDA multiple with DYNAMIC adjustments.
+        
+        Applies 3 layers of multiple adjustments:
+        1. Market multiple trend (bull/bear markets)
+        2. Operational health impact
+        3. Growth quality adjustment
         """
+        # Get base multiple
         if self.valuation_multiple is not None:
-            # Use company-specific multiple (already incorporates sector characteristics + noise)
-            multiple = self.valuation_multiple
+            base_multiple = self.valuation_multiple
         elif market:
-            # Fall back to sector average from market
-            multiple = market.get_sector_multiple(self.sector)
+            base_multiple = market.get_sector_multiple(self.sector)
         else:
-            # Default multiple
-            multiple = (config.MIN_EBITDA_MULTIPLE + config.MAX_EBITDA_MULTIPLE) / 2
-            
-        valuation = self.ebitda * multiple
+            base_multiple = (config.MIN_EBITDA_MULTIPLE + config.MAX_EBITDA_MULTIPLE) / 2
+        
+        # PHASE 1: Market multiple trend (±20%)
+        if market:
+            market_adjustment = market.multiple_trend
+        else:
+            market_adjustment = 1.0
+        
+        # PHASE 2: Operational health impact (-15% at worst)
+        # Low health = multiple compression
+        # Formula: 0.85 + (health * 0.15) → Range: 0.85 (at 0% health) to 1.0 (at 100% health)
+        health_adjustment = 0.85 + (self.operational_health * 0.15)
+        
+        # PHASE 3: Growth quality adjustment (±8%)
+        growth_quality_adjustment = self.get_growth_quality_adjustment()
+        
+        # Calculate final multiple
+        effective_multiple = (base_multiple * 
+                            market_adjustment * 
+                            health_adjustment * 
+                            growth_quality_adjustment)
+        
+        valuation = self.ebitda * effective_multiple
         self.current_valuation = valuation
         return valuation
         

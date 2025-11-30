@@ -10,8 +10,12 @@ import config
 class Market:
     """Represents global market conditions and sector-specific factors."""
     
-    def __init__(self):
-        self.interest_rate = config.BASE_INTEREST_RATE
+    def __init__(self, difficulty: str = 'medium'):
+        self.difficulty = difficulty
+        self.difficulty_settings = config.DIFFICULTY_SETTINGS.get(difficulty, config.DIFFICULTY_SETTINGS['medium'])
+        
+        # Use difficulty-based interest rate
+        self.interest_rate = self.difficulty_settings['base_interest_rate']
         self.growth_rate = config.MARKET_GROWTH_RATE
         
         # Sector-specific EBITDA multiples
@@ -29,19 +33,24 @@ class Market:
         # Credit conditions (0-1 scale, higher = easier credit)
         self.credit_conditions = 0.7
         
+        # PHASE 1: Market multiple trend (affects ALL company valuations)
+        # 1.0 = neutral, >1.0 = multiple expansion, <1.0 = multiple compression
+        self.multiple_trend = 1.0
+        
         # Historical tracking
         self.interest_rate_history = [self.interest_rate]
         self.growth_rate_history = [self.growth_rate]
+        self.multiple_trend_history = [self.multiple_trend]
         
     def update_quarter(self) -> None:
         """Update market conditions for the new quarter."""
         # Interest rate random walk
-        rate_change = random.gauss(0, config.INTEREST_RATE_VOLATILITY)
+        rate_change = random.gauss(0, config.INTEREST_RATE_VOLATILITY * self.difficulty_settings['market_volatility_multiplier'])
         self.interest_rate += rate_change
         self.interest_rate = max(0.01, min(0.15, self.interest_rate))  # Keep between 1% and 15%
         
-        # Market growth rate
-        growth_change = random.gauss(0, config.MARKET_VOLATILITY)
+        # Market growth rate (adjusted by difficulty)
+        growth_change = random.gauss(0, config.MARKET_VOLATILITY * self.difficulty_settings['market_volatility_multiplier'])
         self.growth_rate += growth_change
         self.growth_rate = max(-0.10, min(0.10, self.growth_rate))  # Keep between -10% and +10%
         
@@ -49,6 +58,15 @@ class Market:
         credit_change = random.gauss(0, 0.05)
         self.credit_conditions += credit_change
         self.credit_conditions = max(0.0, min(1.0, self.credit_conditions))
+        
+        # PHASE 1: Update market multiple trend (mean-reverting random walk)
+        # This creates bull/bear market cycles for valuations
+        # Volatility adjusted by difficulty
+        cycle_change = random.gauss(0, self.difficulty_settings['multiple_trend_volatility'])
+        reversion = (1.0 - self.multiple_trend) * 0.1  # Pull back to neutral (1.0)
+        
+        self.multiple_trend += cycle_change + reversion
+        self.multiple_trend = max(0.80, min(1.20, self.multiple_trend))  # ±20% range
         
         # Sector multiples drift based on market conditions
         for sector in self.sector_multiples:
@@ -63,6 +81,7 @@ class Market:
         # Record history
         self.interest_rate_history.append(self.interest_rate)
         self.growth_rate_history.append(self.growth_rate)
+        self.multiple_trend_history.append(self.multiple_trend)
         
     def get_sector_multiple(self, sector: str) -> float:
         """Get the EBITDA multiple for a specific sector."""
@@ -84,7 +103,8 @@ class Market:
             'growth_rate': self.growth_rate,
             'credit_conditions': self.credit_conditions,
             'discount_rate': self.get_discount_rate(),
-            'debt_rate': self.get_debt_rate()
+            'debt_rate': self.get_debt_rate(),
+            'multiple_trend': self.multiple_trend
         }
         
     def is_recession(self) -> bool:

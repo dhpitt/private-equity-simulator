@@ -22,14 +22,14 @@ import config
 class GameEngine:
     """Central game engine that orchestrates all game systems."""
     
-    def __init__(self):
+    def __init__(self, difficulty: str = 'medium', fund_name: str = None):
         # Initialize random seed
         if config.RANDOM_SEED is not None:
             random.seed(config.RANDOM_SEED)
             
-        # Initialize game components
-        self.player = Player()
-        self.market = Market()
+        # Initialize game components with difficulty
+        self.player = Player(fund_name=fund_name, difficulty=difficulty)
+        self.market = Market(difficulty=difficulty)
         self.time_manager = TimeManager()
         
         # Available companies for acquisition (organized by sector/tier)
@@ -57,8 +57,17 @@ class GameEngine:
                 self.main_loop()
                 return
         
-        # New game
-        screens.show_intro()
+        # New game - select difficulty and fund name
+        # Note: __init__ was already called with defaults, so we need to reinitialize
+        # with the player's choices
+        difficulty = screens.select_difficulty()
+        fund_name = screens.select_fund_name()
+        
+        # Reinitialize with player choices
+        self.player = Player(fund_name=fund_name, difficulty=difficulty)
+        self.market = Market(difficulty=difficulty)
+        
+        screens.show_intro(self.player, self.market)
         self.generate_new_deals()
         self.main_loop()
         
@@ -112,16 +121,39 @@ class GameEngine:
             sector: 1.0 for sector in self.market.sector_multiples.keys()
         }
         
+        # Track manager narratives
+        manager_narratives = []
+        
         for company in self.player.portfolio:
-            company.simulate_quarter(market_conditions)
+            performance = company.simulate_quarter(market_conditions)
             company.calculate_valuation(self.market)
             # Reset operation tracking for new quarter
             company.reset_quarterly_operations()
+            
+            # Generate manager narrative if noteworthy
+            from simulation import manager_system
+            narrative = manager_system.get_quarterly_performance_narrative(
+                company, 
+                performance['manager_impact'], 
+                performance['growth']
+            )
+            
+            if narrative:
+                manager_narratives.append((company.name, narrative))
             
         # Generate random event
         event = events.generate_event(self.player, self.player.portfolio, self.market)
         if event:
             self.handle_event(event)
+        
+        # Display manager performance narratives
+        if manager_narratives:
+            print("\n" + "=" * 70)
+            print("MANAGEMENT REPORTS")
+            print("=" * 70)
+            for company_name, narrative in manager_narratives:
+                print(f"\n📊 {company_name}:")
+                print(f"   {narrative}")
             
         # Pay interest on debt
         if self.player.current_debt > 0:
@@ -413,6 +445,7 @@ class GameEngine:
         print(f"\nSector: {company.sector}")
         print(f"Current EBITDA Margin: {company.ebitda_margin:.1%}")
         print(f"Current Growth Rate: {company.growth_rate:+.1%}")
+        print(f"Current Operational Health: {company.operational_health:.0%}")
         print("\nCost Cutting Initiative Impact:")
         print("  • Higher intensity = Better margins BUT worse growth")
         print("  • Aggressive cuts risk employee morale and reputation")
@@ -423,6 +456,34 @@ class GameEngine:
             return
             
         intensity_normalized = intensity / 100
+        
+        # PREVIEW IMPACT before executing
+        print("\n" + "=" * 70)
+        print("PROJECTED IMPACT")
+        print("=" * 70)
+        
+        # Estimate the impact
+        estimated_margin_improvement = intensity_normalized * 0.10  # Up to 10%
+        estimated_growth_penalty = intensity_normalized * 0.08  # Up to 8%
+        estimated_health_damage = intensity_normalized * 0.25  # Up to 25%
+        
+        print(f"\nExpected Results for {intensity}% intensity:")
+        print(f"  • EBITDA Margin:  {company.ebitda_margin:.1%} → {company.ebitda_margin + estimated_margin_improvement:.1%} (+{estimated_margin_improvement:.1%})")
+        print(f"  • Growth Rate:    {company.growth_rate:+.1%} → {company.growth_rate - estimated_growth_penalty:+.1%} (-{estimated_growth_penalty:.1%})")
+        print(f"  • Health:         {company.operational_health:.0%} → {max(0, company.operational_health - estimated_health_damage):.0%} (-{estimated_health_damage:.0%})")
+        
+        if intensity_normalized > 0.7:
+            print(f"\n⚠️  WARNING: High intensity cost-cutting!")
+            print(f"  • Significant operational health damage")
+            print(f"  • Potential reputation hit")
+            print(f"  • Long recovery period")
+        
+        print("\n" + "=" * 70)
+        
+        if not ih.prompt_yes_no("Proceed with this cost-cutting initiative?"):
+            print("\n❌ Cost-cutting cancelled.")
+            ih.press_enter_to_continue()
+            return
         
         result = portfolio_ops.apply_cost_cutting(company, intensity_normalized)
         
@@ -549,11 +610,15 @@ class GameEngine:
     
     def handle_capex_investment(self, company: Company) -> None:
         """Handle capex investment with debt financing option."""
-        print("\nCapital Investment")
-        print(f"Company revenue: ${company.revenue:,.0f}")
+        print("\n" + "=" * 70)
+        print(f"CAPITAL INVESTMENT: {company.name}")
+        print("=" * 70)
+        print(f"\nCompany revenue: ${company.revenue:,.0f}")
+        print(f"Current growth rate: {company.growth_rate:+.1%}")
+        print(f"Current operational health: {company.operational_health:.0%}")
         
         max_affordable = self.player.cash + (self.player.get_debt_capacity() - self.player.current_debt)
-        print(f"Available capital (cash + debt): ${max_affordable:,.0f}")
+        print(f"\nAvailable capital (cash + debt): ${max_affordable:,.0f}")
         
         amount = ih.prompt_number(
             "Enter investment amount",
@@ -563,6 +628,29 @@ class GameEngine:
         )
         
         if amount is None or amount == 0:
+            return
+        
+        # PREVIEW IMPACT before financing
+        print("\n" + "=" * 70)
+        print("PROJECTED IMPACT")
+        print("=" * 70)
+        
+        # Estimate impact
+        investment_ratio = amount / company.revenue
+        estimated_growth_boost = investment_ratio * 0.05  # ~5% per revenue-dollar invested
+        estimated_health_improvement = min(0.15, investment_ratio * 0.10)  # Up to 15%
+        
+        print(f"\nExpected Results for ${amount:,.0f} investment:")
+        print(f"  • Investment/Revenue ratio: {investment_ratio:.1%}")
+        print(f"  • Growth Rate:   {company.growth_rate:+.1%} → {company.growth_rate + estimated_growth_boost:+.1%} (+{estimated_growth_boost:.1%})")
+        print(f"  • Health:        {company.operational_health:.0%} → {min(1.0, company.operational_health + estimated_health_improvement):.0%} (+{estimated_health_improvement:.0%})")
+        print(f"  • Cost:          ${amount:,.0f}")
+        
+        print("\n" + "=" * 70)
+        
+        if not ih.prompt_yes_no("Proceed with this capital investment?"):
+            print("\n❌ Investment cancelled.")
+            ih.press_enter_to_continue()
             return
         
         # Choose financing
@@ -581,11 +669,71 @@ class GameEngine:
         ih.press_enter_to_continue()
         
     def handle_management_replacement(self, company: Company) -> None:
-        """Handle management replacement with debt financing option."""
+        """Handle management replacement with candidate selection and narratives."""
+        from simulation import manager_system
+        
+        print("\n" + "=" * 70)
+        print(f"MANAGEMENT REPLACEMENT: {company.name}")
+        print("=" * 70)
         print(f"\nCurrent Manager: {company.manager}")
         print(f"Replacement cost: ${config.MANAGER_REPLACEMENT_COST:,.0f}")
+        print()
         
-        if not ih.prompt_yes_no("Proceed with management replacement?"):
+        # Generate candidate options
+        candidates = manager_system.generate_manager_candidates(company.manager, num_candidates=3)
+        
+        print("SELECT NEW MANAGER:")
+        print("=" * 70)
+        
+        for i, (archetype, manager, pitch) in enumerate(candidates, 1):
+            print(f"\n{i}. {archetype} - {manager.name}")
+            print(f"   {pitch}")
+            print(f"   Stats: Competence {manager.competence:.0%} | Risk {manager.risk_profile:.0%} | Coop {manager.cooperativeness:.0%}")
+        
+        print(f"\n{len(candidates) + 1}. Cancel")
+        
+        choice = ih.prompt_choice(
+            list(range(len(candidates) + 2)),
+            "Select candidate"
+        )
+        
+        if choice < 0 or choice >= len(candidates):
+            print("\nReplacement cancelled.")
+            ih.press_enter_to_continue()
+            return
+        
+        selected_archetype, selected_manager, selected_pitch = candidates[choice]
+        
+        print(f"\n✓ Selected: {selected_archetype} - {selected_manager.name}")
+        
+        # PREVIEW TRANSITION IMPACT
+        from simulation import manager_system
+        impact = manager_system.calculate_transition_impact(company.manager, selected_manager)
+        
+        print("\n" + "=" * 70)
+        print("PROJECTED TRANSITION IMPACT")
+        print("=" * 70)
+        print(f"\nOld Manager: {company.manager.name}")
+        print(f"  Competence: {company.manager.competence:.0%} | Risk: {company.manager.risk_profile:.0%} | Coop: {company.manager.cooperativeness:.0%}")
+        print(f"\nNew Manager: {selected_manager.name}")
+        print(f"  Competence: {selected_manager.competence:.0%} | Risk: {selected_manager.risk_profile:.0%} | Coop: {selected_manager.cooperativeness:.0%}")
+        print(f"\nExpected Impact:")
+        print(f"  • Transition Penalty:     -{impact['transition_penalty']:.1%} growth (temporary)")
+        print(f"  • Long-term Improvement:  +{impact['long_term_improvement']:.1%} growth")
+        print(f"  • Volatility Change:       {impact['volatility_change']:+.1%}")
+        print(f"  • Health Impact:           {'+' if impact['competence_delta'] > 0 else ''}{impact['competence_delta'] * 0.20:.1%}")
+        print(f"  • Cost:                    ${config.MANAGER_REPLACEMENT_COST:,.0f}")
+        
+        if company.manager.cooperativeness < 0.4:
+            print(f"\n⚠️  WARNING: Current manager may resist termination")
+            print(f"  • Potential additional costs")
+            print(f"  • Possible reputation damage")
+        
+        print("\n" + "=" * 70)
+        
+        if not ih.prompt_yes_no(f"Proceed with hiring {selected_manager.name}?"):
+            print("\n❌ Management replacement cancelled.")
+            ih.press_enter_to_continue()
             return
         
         # Choose financing
@@ -599,18 +747,48 @@ class GameEngine:
             ih.press_enter_to_continue()
             return
             
-        result = portfolio_ops.replace_management(company, self.player)
+        result = portfolio_ops.replace_management(company, self.player, selected_manager)
         
-        print(f"\n{result['message']}")
         if result['success']:
-            print(f"New Manager: {result['new_manager']}")
+            # Display firing narrative
+            print("\n" + "=" * 70)
+            print("💼 TERMINATION")
+            print("=" * 70)
+            print(f"\n{result['firing_narrative']}")
+            
+            print("\n" + "=" * 70)
+            print("🤝 NEW HIRE")
+            print("=" * 70)
+            print(f"\n{result['hiring_narrative']}")
+            
+            # Display transition impact
+            print("\n" + "=" * 70)
+            print("TRANSITION IMPACT")
+            print("=" * 70)
+            print(f"\n  Growth Penalty:       -{result['transition_penalty']:.1%} (temporary)")
+            print(f"  Volatility Change:     {result['volatility_change']:+.1%}")
+            print(f"  Health Impact:         {result['health_improvement']:+.1%}")
+            print(f"  Cost:                  ${result['cost']:,.0f}")
+            
+            if result['difficult']:
+                print(f"\n⚠️  Difficult termination incurred additional costs and reputation damage.")
+            
             if debt_used > 0:
-                print(f"Financed with ${debt_used:,.0f} debt")
+                print(f"\n💳 Financed with ${debt_used:,.0f} debt")
+        else:
+            print(f"\n{result['message']}")
             
         ih.press_enter_to_continue()
         
     def handle_growth_strategy(self, company: Company) -> None:
         """Handle growth strategy selection with debt financing option."""
+        print("\n" + "=" * 70)
+        print(f"GROWTH STRATEGY: {company.name}")
+        print("=" * 70)
+        print(f"\nCurrent revenue: ${company.revenue:,.0f}")
+        print(f"Current growth rate: {company.growth_rate:+.1%}")
+        print(f"Current operational health: {company.operational_health:.0%}")
+        
         print("\nGrowth Strategies:")
         
         options = [
@@ -628,6 +806,46 @@ class GameEngine:
             return
             
         strategy = strategies[choice]
+        
+        # PREVIEW IMPACT before executing
+        print("\n" + "=" * 70)
+        print("PROJECTED IMPACT")
+        print("=" * 70)
+        
+        # Show estimated ranges for selected strategy
+        if strategy == 'roll_up':
+            print(f"\nRoll-up Strategy - Acquire competitors to consolidate market")
+            print(f"\nExpected Impact:")
+            print(f"  • Cost:              ${company.revenue * 1.5:,.0f} - ${company.revenue * 2.0:,.0f} (150-200% of revenue)")
+            print(f"  • Revenue Growth:    +10% to +20%")
+            print(f"  • Margin Improvement: +1% to +3%")
+            print(f"  • Volatility:        +3% to +8% (integration risk)")
+            print(f"  • Growth Drag:       -1% to -3% (temporary integration period)")
+            print(f"  • Health Impact:     -10% to +8% (integration success varies)")
+            print(f"\n⚠️  HIGH RISK, HIGH COST, HIGH REWARD")
+            
+        elif strategy == 'expand':
+            print(f"\nExpansion Strategy - Enter new markets or geographies")
+            print(f"\nExpected Impact:")
+            print(f"  • Revenue Growth:    +5% to +15%")
+            print(f"  • Volatility:        +2% to +5% (new market risk)")
+            print(f"  • Health Impact:     +3% to +8%")
+            print(f"\n💰 MODERATE RISK, ORGANIC GROWTH")
+            
+        elif strategy == 'diversify':
+            print(f"\nDiversification Strategy - New products or services")
+            print(f"\nExpected Impact:")
+            print(f"  • Revenue Growth:    +3% to +10%")
+            print(f"  • Volatility:        -1% to -3% (risk reduction)")
+            print(f"  • Health Impact:     +2% to +6%")
+            print(f"\n🛡️  DEFENSIVE, REDUCES VOLATILITY")
+        
+        print("\n" + "=" * 70)
+        
+        if not ih.prompt_yes_no("Proceed with this growth strategy?"):
+            print("\n❌ Growth strategy cancelled.")
+            ih.press_enter_to_continue()
+            return
         
         result = portfolio_ops.pursue_acquisition_strategy(company, strategy)
         
@@ -670,15 +888,35 @@ class GameEngine:
         profit = deal.asking_price - company.acquisition_price
         print(f"Profit/Loss: ${profit:,.0f} ({profit/company.acquisition_price:+.1%})")
         
+        # Calculate taxes if profitable
+        tax_owed = self.player.calculate_capital_gains_tax(deal.asking_price, company.acquisition_price)
+        
+        if tax_owed > 0:
+            difficulty_settings = config.DIFFICULTY_SETTINGS.get(self.player.difficulty, config.DIFFICULTY_SETTINGS['medium'])
+            tax_rate = difficulty_settings['capital_gains_tax_rate']
+            print(f"\n💸 Capital Gains Tax ({tax_rate:.0%}): ${tax_owed:,.0f}")
+            proceeds_after_tax = deal.asking_price - tax_owed
+            print(f"Net Proceeds (after tax): ${proceeds_after_tax:,.0f}")
+        
         if ih.prompt_yes_no("Accept this offer?"):
             # Complete exit
             self.player.adjust_cash(deal.asking_price)
+            
+            # Pay taxes on gains
+            if tax_owed > 0:
+                self.player.pay_taxes(tax_owed)
+            
             self.player.remove_company(company)
             self.player.record_deal('exit', company.name, deal.asking_price, 
                                   self.time_manager.current_quarter)
             
             print(f"\nInvestment exited successfully!")
-            print(f"Proceeds: ${deal.asking_price:,.0f}")
+            print(f"Gross Proceeds: ${deal.asking_price:,.0f}")
+            if tax_owed > 0:
+                print(f"Taxes Paid: ${tax_owed:,.0f}")
+                print(f"Net Proceeds: ${deal.asking_price - tax_owed:,.0f}")
+            else:
+                print(f"Net Proceeds: ${deal.asking_price:,.0f} (no tax on loss)")
             
         ih.press_enter_to_continue()
         

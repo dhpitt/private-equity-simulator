@@ -21,7 +21,7 @@ def main_menu(player: Player, market: Market, time_manager: 'TimeManager') -> st
     ih.clear_screen()
     
     print("=" * 70)
-    print(f"PRIVATE EQUITY SIMULATOR - {time_manager.get_time_display()}")
+    print(f"{player.fund_name.upper()} - {time_manager.get_time_display()}")
     print("=" * 70)
     print(f"\nCash: ${player.cash:,.0f}")
     print(f"Debt: ${player.current_debt:,.0f} / ${player.get_debt_capacity():,.0f} ({player.get_debt_utilization():.0%} utilized)")
@@ -442,10 +442,13 @@ def valuation_tier_menu(sector: str) -> str:
     print("\nChoose a price range:\n")
     
     tiers = {
-        'micro': ('Micro', '$500K - $2M', 'Small local businesses'),
-        'small': ('Small', '$2M - $5M', 'Established local/regional companies'),
-        'medium': ('Medium', '$5M - $15M', 'Regional leaders'),
-        'large': ('Large', '$15M - $50M', 'Large regional/national players')
+        'local': ('Local', '$500K - $5M', 'Local businesses'),
+        'regional': ('Regional', '$5M - $50M', 'Regional businesses'),
+        'micro-cap': ('Micro-Cap', '$50M - $200M', 'Small public companies'),
+        'small-cap': ('Small-Cap', '$200M - $2B', 'Small-cap stocks'),
+        'mid-cap': ('Mid-Cap', '$2B - $10B', 'Mid-cap stocks'),
+        'large-cap': ('Large-Cap', '$10B - $200B', 'Large-cap (incl. S&P 500)'),
+        'mega-cap': ('Mega-Cap', '$200B - $2T', 'Mega-cap (mostly S&P 500)')
     }
     
     tier_keys = list(tiers.keys())
@@ -453,7 +456,7 @@ def valuation_tier_menu(sector: str) -> str:
     
     for tier_key in tier_keys:
         name, range_str, desc = tiers[tier_key]
-        options.append(f"{name:8} {range_str:15} - {desc}")
+        options.append(f"{name:10} {range_str:18} - {desc}")
     
     options.append("Back to Sector Selection")
     
@@ -482,10 +485,13 @@ def tiered_company_selection_menu(sector: str, tier: str, companies: List) -> Op
     ih.clear_screen()
     
     tier_names = {
-        'micro': 'Micro ($500K - $2M)',
-        'small': 'Small ($2M - $5M)',
-        'medium': 'Medium ($5M - $15M)',
-        'large': 'Large ($15M - $50M)'
+        'local': 'Local ($500K - $5M)',
+        'regional': 'Regional ($5M - $50M)',
+        'micro-cap': 'Micro-Cap ($50M - $200M)',
+        'small-cap': 'Small-Cap ($200M - $2B)',
+        'mid-cap': 'Mid-Cap ($2B - $10B)',
+        'large-cap': 'Large-Cap ($10B - $200B)',
+        'mega-cap': 'Mega-Cap ($200B - $2T)'
     }
     
     print("=" * 70)
@@ -493,11 +499,19 @@ def tiered_company_selection_menu(sector: str, tier: str, companies: List) -> Op
     print("=" * 70)
     print(f"\n{len(companies)} companies available:\n")
     
-    # Display companies in a simple table format
-    print(f"{'Company':<30} {'Revenue':<15} {'Valuation':<15}")
-    print("-" * 70)
+    # Display companies in a simple table format with better formatting for large numbers
+    print(f"{'Company':<45} {'Valuation':<20} {'Manager':<25}")
+    print("-" * 90)
     for company in companies:
-        print(f"{company.name:<30} ${company.revenue:>12,.0f}  ${company.current_valuation:>12,.0f}")
+        # Format large numbers more readably
+        if company.current_valuation >= 1_000_000_000:  # Billions
+            val_str = f"${company.current_valuation / 1_000_000_000:>8,.1f}B"
+        elif company.current_valuation >= 1_000_000:  # Millions
+            val_str = f"${company.current_valuation / 1_000_000:>8,.1f}M"
+        else:  # Thousands
+            val_str = f"${company.current_valuation / 1_000:>8,.1f}K"
+        
+        print(f"{company.name:<45} {val_str:<20} {company.manager.name:<25}")
     print()
     
     options = [f"{c.name} - ${c.current_valuation:,.0f}" for c in companies]
