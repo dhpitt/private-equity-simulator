@@ -5,7 +5,7 @@ Procedural generation for companies, managers, and content.
 import random
 import json
 import os
-from typing import Dict, List
+from typing import Dict, List, Any
 from models.company import Company
 from models.manager import Manager
 import config
@@ -355,3 +355,73 @@ def generate_market_sector_shock(sectors: List[str]) -> Dict[str, float]:
         
     return shock_map
 
+
+
+def generate_tiered_deal_portfolio(market: 'Market') -> Dict[str, Dict[str, List[Company]]]:
+    """
+    Generate a comprehensive portfolio of companies organized by sector and valuation tier.
+    Ensures companies are available at all price points.
+    
+    Args:
+        market: Current market state
+        
+    Returns:
+        Dict with structure: {sector: {tier: [companies]}}
+    """
+    portfolio = {}
+    sectors = get_sectors()
+    
+    # Define valuation tiers (based on enterprise value)
+    tiers = {
+        'micro': (500_000, 2_000_000),      # $500K - $2M
+        'small': (2_000_000, 5_000_000),    # $2M - $5M
+        'medium': (5_000_000, 15_000_000),  # $5M - $15M
+        'large': (15_000_000, 50_000_000),  # $15M - $50M
+    }
+    
+    # Generate 2-3 companies per sector per tier
+    for sector in sectors:
+        portfolio[sector] = {}
+        
+        for tier_name, (min_val, max_val) in tiers.items():
+            portfolio[sector][tier_name] = []
+            
+            # Generate 2-3 companies in this tier
+            num_companies_in_tier = random.randint(2, 3)
+            
+            for _ in range(num_companies_in_tier):
+                # Target a valuation within this tier
+                target_valuation = random.uniform(min_val, max_val)
+                
+                # Work backwards: valuation = EBITDA * multiple
+                # Get sector multiple from market if available
+                if market and hasattr(market, 'sector_multiples'):
+                    sector_multiple = market.sector_multiples.get(sector, 10.0)
+                else:
+                    sector_multiple = 10.0
+                
+                # Add some variance to the multiple
+                company_multiple = sector_multiple * random.uniform(0.8, 1.2)
+                
+                # target_valuation = revenue * margin * multiple
+                # So revenue = target_valuation / (margin * multiple)
+                typical_margin = random.uniform(0.15, 0.25)
+                target_revenue = target_valuation / (typical_margin * company_multiple)
+                
+                # Clamp to configured range
+                target_revenue = max(config.MIN_COMPANY_REVENUE, 
+                                   min(config.MAX_COMPANY_REVENUE, target_revenue))
+                
+                # Generate company with this target revenue
+                company = generate_company(sector, revenue_range=(target_revenue * 0.9, target_revenue * 1.1))
+                
+                # Calculate actual valuation
+                if market:
+                    company.calculate_valuation(market)
+                else:
+                    default_multiple = (config.MIN_EBITDA_MULTIPLE + config.MAX_EBITDA_MULTIPLE) / 2
+                    company.current_valuation = company.ebitda * default_multiple
+                
+                portfolio[sector][tier_name].append(company)
+    
+    return portfolio

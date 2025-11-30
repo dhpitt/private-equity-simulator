@@ -6,11 +6,123 @@ Handles serialization and deserialization of game state.
 import json
 import os
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 
 
 SAVES_DIR = Path("saves")
+
+
+class GameSaver:
+    """Class to handle game save/load operations."""
+    
+    @staticmethod
+    def ensure_saves_directory():
+        """Ensure the saves directory exists."""
+        SAVES_DIR.mkdir(exist_ok=True)
+    
+    @staticmethod
+    def list_saves() -> List[Tuple[str, str, str]]:
+        """
+        List all available save files.
+        
+        Returns:
+            List of tuples: (save_name, timestamp, quarter_info)
+        """
+        GameSaver.ensure_saves_directory()
+        
+        saves = []
+        for save_file in SAVES_DIR.glob("*.json"):
+            try:
+                with open(save_file, 'r') as f:
+                    data = json.load(f)
+                
+                save_name = save_file.stem
+                timestamp = data.get('timestamp', 'Unknown')
+                quarter = data['time']['current_quarter']
+                year = data['time']['current_year']
+                
+                saves.append((save_name, timestamp, f"Year {year}, Q{quarter % 4 + 1}"))
+            except Exception:
+                continue
+        
+        return sorted(saves, key=lambda x: x[1], reverse=True)
+    
+    @staticmethod
+    def save(engine: 'GameEngine', save_name: str) -> bool:
+        """
+        Save game state to a file.
+        
+        Args:
+            engine: GameEngine instance
+            save_name: Name for the save file (without extension)
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            GameSaver.ensure_saves_directory()
+            
+            game_state = serialize_game_state(engine)
+            save_path = SAVES_DIR / f"{save_name}.json"
+            
+            with open(save_path, 'w') as f:
+                json.dump(game_state, f, indent=2)
+            
+            return True
+        except Exception as e:
+            print(f"Error saving game: {e}")
+            return False
+    
+    @staticmethod
+    def load(save_name: str, engine: 'GameEngine') -> bool:
+        """
+        Load game state from a file.
+        
+        Args:
+            save_name: Name of the save file (without extension)
+            engine: GameEngine instance to populate
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            save_path = SAVES_DIR / f"{save_name}.json"
+            
+            if not save_path.exists():
+                print(f"Save file not found: {save_name}")
+                return False
+            
+            with open(save_path, 'r') as f:
+                game_state = json.load(f)
+            
+            deserialize_game_state(game_state, engine)
+            
+            return True
+        except Exception as e:
+            print(f"Error loading game: {e}")
+            return False
+    
+    @staticmethod
+    def delete(save_name: str) -> bool:
+        """
+        Delete a save file.
+        
+        Args:
+            save_name: Name of the save file (without extension)
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            save_path = SAVES_DIR / f"{save_name}.json"
+            if save_path.exists():
+                save_path.unlink()
+                return True
+            return False
+        except Exception as e:
+            print(f"Error deleting save: {e}")
+            return False
 
 
 def ensure_saves_directory():
@@ -55,6 +167,9 @@ def serialize_game_state(engine: 'GameEngine') -> Dict[str, Any]:
             'current_valuation': company.current_valuation,
             'revenue_history': company.revenue_history,
             'ebitda_history': company.ebitda_history,
+            'last_operation_quarter': company.last_operation_quarter,
+            'operations_this_quarter': company.operations_this_quarter,
+            'operational_health': company.operational_health,
             'manager': {
                 'name': company.manager.name,
                 'competence': company.manager.competence,
@@ -158,6 +273,9 @@ def deserialize_game_state(data: Dict[str, Any], engine: 'GameEngine') -> None:
         company.current_valuation = company_data['current_valuation']
         company.revenue_history = company_data['revenue_history']
         company.ebitda_history = company_data['ebitda_history']
+        company.last_operation_quarter = company_data.get('last_operation_quarter')
+        company.operations_this_quarter = company_data.get('operations_this_quarter', 0)
+        company.operational_health = company_data.get('operational_health', 1.0)
         
         engine.player.portfolio.append(company)
     
@@ -202,9 +320,19 @@ def deserialize_game_state(data: Dict[str, Any], engine: 'GameEngine') -> None:
         engine.available_deals.append(company)
 
 
+def list_save_files() -> list:
+    """
+    List all available save files (compatibility wrapper).
+    
+    Returns:
+        List of tuples: (save_name, timestamp, quarter)
+    """
+    return GameSaver.list_saves()
+
+
 def save_game(engine: 'GameEngine', save_name: str) -> bool:
     """
-    Save game state to a file.
+    Save game state to a file (compatibility wrapper).
     
     Args:
         engine: GameEngine instance
@@ -213,24 +341,12 @@ def save_game(engine: 'GameEngine', save_name: str) -> bool:
     Returns:
         True if successful, False otherwise
     """
-    try:
-        ensure_saves_directory()
-        
-        game_state = serialize_game_state(engine)
-        save_path = SAVES_DIR / f"{save_name}.json"
-        
-        with open(save_path, 'w') as f:
-            json.dump(game_state, f, indent=2)
-        
-        return True
-    except Exception as e:
-        print(f"Error saving game: {e}")
-        return False
+    return GameSaver.save(engine, save_name)
 
 
 def load_game(save_name: str, engine: 'GameEngine') -> bool:
     """
-    Load game state from a file.
+    Load game state from a file (compatibility wrapper).
     
     Args:
         save_name: Name of the save file (without extension)
@@ -239,54 +355,12 @@ def load_game(save_name: str, engine: 'GameEngine') -> bool:
     Returns:
         True if successful, False otherwise
     """
-    try:
-        save_path = SAVES_DIR / f"{save_name}.json"
-        
-        if not save_path.exists():
-            print(f"Save file not found: {save_name}")
-            return False
-        
-        with open(save_path, 'r') as f:
-            game_state = json.load(f)
-        
-        deserialize_game_state(game_state, engine)
-        
-        return True
-    except Exception as e:
-        print(f"Error loading game: {e}")
-        return False
-
-
-def list_save_files() -> list:
-    """
-    List all available save files.
-    
-    Returns:
-        List of tuples: (save_name, timestamp, quarter)
-    """
-    ensure_saves_directory()
-    
-    saves = []
-    for save_file in SAVES_DIR.glob("*.json"):
-        try:
-            with open(save_file, 'r') as f:
-                data = json.load(f)
-            
-            save_name = save_file.stem
-            timestamp = data.get('timestamp', 'Unknown')
-            quarter = data['time']['current_quarter']
-            year = data['time']['current_year']
-            
-            saves.append((save_name, timestamp, f"Year {year}, Q{quarter % 4 + 1}"))
-        except Exception:
-            continue
-    
-    return sorted(saves, key=lambda x: x[1], reverse=True)
+    return GameSaver.load(save_name, engine)
 
 
 def delete_save(save_name: str) -> bool:
     """
-    Delete a save file.
+    Delete a save file (compatibility wrapper).
     
     Args:
         save_name: Name of the save file (without extension)
@@ -294,12 +368,4 @@ def delete_save(save_name: str) -> bool:
     Returns:
         True if successful, False otherwise
     """
-    try:
-        save_path = SAVES_DIR / f"{save_name}.json"
-        if save_path.exists():
-            save_path.unlink()
-            return True
-        return False
-    except Exception as e:
-        print(f"Error deleting save: {e}")
-        return False
+    return GameSaver.delete(save_name)

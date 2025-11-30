@@ -32,8 +32,8 @@ class GameEngine:
         self.market = Market()
         self.time_manager = TimeManager()
         
-        # Available companies for acquisition
-        self.available_deals: List[Company] = []
+        # Available companies for acquisition (organized by sector/tier)
+        self.available_deals: Dict[str, Dict[str, List[Company]]] = {}
         
         # Game state
         self.running = True
@@ -95,6 +95,14 @@ class GameEngine:
         """Advance to the next quarter."""
         print("\nAdvancing to next quarter...")
         
+        # Show inspirational quote screen
+        from ui import screens
+        screens.show_quote_screen()
+        
+        # Calculate profit before quarter simulation
+        starting_cash = self.player.cash
+        starting_portfolio_value = self.player.compute_portfolio_value()
+        
         # Update market
         self.market.update_quarter()
         
@@ -107,6 +115,8 @@ class GameEngine:
         for company in self.player.portfolio:
             company.simulate_quarter(market_conditions)
             company.calculate_valuation(self.market)
+            # Reset operation tracking for new quarter
+            company.reset_quarterly_operations()
             
         # Generate random event
         event = events.generate_event(self.player, self.player.portfolio, self.market)
@@ -116,8 +126,41 @@ class GameEngine:
         # Pay interest on debt
         if self.player.current_debt > 0:
             interest = self.player.current_debt * (self.market.get_debt_rate() / 4)
-            self.player.adjust_cash(-interest)
-            print(f"\nPaid ${interest:,.0f} in debt interest.")
+            
+            if self.player.cash >= interest:
+                # Can afford to pay interest
+                self.player.adjust_cash(-interest)
+                print(f"\nPaid ${interest:,.0f} in debt interest.")
+            else:
+                # Cannot afford interest - capitalize it into debt
+                unpaid_interest = interest - self.player.cash
+                
+                if self.player.cash > 0:
+                    # Pay what we can
+                    paid_amount = self.player.cash
+                    self.player.adjust_cash(-paid_amount)
+                    print(f"\nPaid ${paid_amount:,.0f} in debt interest from cash.")
+                
+                # Add unpaid interest to debt
+                self.player.current_debt += unpaid_interest
+                print(f"⚠️  Insufficient cash! ${unpaid_interest:,.0f} in unpaid interest added to debt.")
+                print(f"Total debt is now ${self.player.current_debt:,.0f}")
+                
+                # This hurts reputation
+                self.player.adjust_reputation(-0.02)
+                print(f"📉 Reputation decreased by 2% for missing interest payment (now {self.player.reputation:.0%})")
+        
+        # Calculate quarterly profit and update reputation
+        ending_cash = self.player.cash
+        ending_portfolio_value = self.player.compute_portfolio_value()
+        
+        quarterly_profit = (ending_cash - starting_cash) + (ending_portfolio_value - starting_portfolio_value)
+        reputation_change = self.player.update_reputation_from_profits(quarterly_profit)
+        
+        if reputation_change > 0:
+            print(f"\n📈 Reputation increased by {reputation_change:.1%} from profitable quarter (now {self.player.reputation:.0%})")
+        elif reputation_change < 0:
+            print(f"\n📉 Reputation decreased by {abs(reputation_change):.1%} from unprofitable quarter (now {self.player.reputation:.0%})")
             
         # Generate new acquisition opportunities
         self.generate_new_deals()
@@ -131,97 +174,188 @@ class GameEngine:
         ih.press_enter_to_continue()
         
     def generate_new_deals(self) -> None:
-        """Generate new companies available for acquisition."""
-        self.available_deals = procedural_gen.generate_deal_portfolio(
-            config.NUM_AVAILABLE_DEALS,
-            self.market
-        )
+        """Generate new companies available for acquisition organized by sector and tier."""
+        self.available_deals = procedural_gen.generate_tiered_deal_portfolio(self.market)
         
     def handle_acquisition(self) -> None:
-        """Handle company acquisition flow."""
-        selected_company = menus.acquisition_menu(self.available_deals, self.player, self.market)
-        
-        if selected_company is None:
-            return
-            
-        # Show company details
-        ih.clear_screen()
-        print("=" * 70)
-        print(f"COMPANY DETAILS: {selected_company.name}")
-        print("=" * 70)
-        from ui import table_views
-        table_views.display_company_detail(selected_company)
-        
-        if not ih.prompt_yes_no("Would you like to proceed with negotiation?"):
-            return
-            
-        # Create deal
-        deal = Deal(selected_company, deal_type='acquisition')
-        
-        # Negotiation loop
-        while not deal.deal_closed:
-            action = menus.deal_negotiation_menu(deal, self.player)
-            
-            if action == 'accept':
-                result = deal.accept_asking_price()
-                print(f"\n{result['message']}")
-                
-                if result['accepted']:
-                    self.complete_acquisition(selected_company, result['final_price'])
-                    
-                ih.press_enter_to_continue()
-                break
-                
-            elif action == 'offer':
-                max_offer = self.player.available_capital()
-                offer = ih.prompt_number(
-                    "Enter your offer",
-                    min_value=0,
-                    max_value=max_offer,
-                    allow_float=False
-                )
-                
-                if offer is None:
-                    continue
-                    
-                result = deal.make_offer(offer)
-                print(f"\n{result['message']}")
-                
-                if result['accepted']:
-                    self.complete_acquisition(selected_company, result['final_price'])
-                    ih.press_enter_to_continue()
-                    break
-                elif 'counter_offer' in result:
-                    deal.asking_price = result['counter_offer']
-                    ih.press_enter_to_continue()
-                else:
-                    ih.press_enter_to_continue()
-                    break
-                    
-            else:  # walk away
-                result = deal.walk_away()
-                print(f"\n{result['message']}")
-                ih.press_enter_to_continue()
-                break
-                
-    def complete_acquisition(self, company: Company, price: float) -> None:
-        """Complete an acquisition transaction."""
-        # Check if player has enough cash
-        if price <= self.player.cash:
-            # All cash deal
-            self.player.adjust_cash(-price)
-            debt_used = 0
-        else:
-            # Need to use debt
-            cash_available = self.player.cash
-            debt_needed = price - cash_available
-            
-            if self.player.take_debt(debt_needed):
-                debt_used = debt_needed
-                self.player.adjust_cash(-cash_available)
-            else:
-                print("\nInsufficient capital to complete acquisition!")
+        """Handle company acquisition flow with hierarchical navigation."""
+        while True:
+            # Step 1: Select sector
+            sector = menus.sector_selection_menu()
+            if sector is None:
                 return
+            
+            # Step 2: Select valuation tier
+            while True:
+                tier = menus.valuation_tier_menu(sector)
+                if tier is None:
+                    break  # Back to sector selection
+                
+                # Step 3: Select company
+                companies = self.available_deals.get(sector, {}).get(tier, [])
+                
+                if not companies:
+                    print(f"\nNo companies available in this tier right now.")
+                    ih.press_enter_to_continue()
+                    continue
+                
+                while True:
+                    company = menus.tiered_company_selection_menu(sector, tier, companies)
+                    
+                    if company is None:
+                        break  # Back to tier selection
+                    
+                    # Show company details
+                    ih.clear_screen()
+                    print("=" * 70)
+                    print(f"COMPANY DETAILS: {company.name}")
+                    print("=" * 70)
+                    from ui import table_views
+                    table_views.display_company_detail(company)
+                    
+                    # Check if player can afford
+                    max_affordable = self.player.cash + (self.player.get_debt_capacity() - self.player.current_debt)
+                    
+                    if company.current_valuation > max_affordable:
+                        print(f"\n⚠️  This company costs ${company.current_valuation:,.0f}")
+                        print(f"Your maximum capital (cash + available debt): ${max_affordable:,.0f}")
+                        print("\nYou cannot afford this acquisition. Build your reputation and net worth!")
+                        ih.press_enter_to_continue()
+                        continue
+                    
+                    # Negotiate
+                    if ih.prompt_yes_no("Proceed with acquisition?"):
+                        deal = Deal(company, deal_type='acquisition')
+                        
+                        # Simple negotiation
+                        while not deal.deal_closed:
+                            action = menus.deal_negotiation_menu(deal, self.player)
+                            
+                            if action == 'accept':
+                                result = deal.accept_asking_price()
+                                print(f"\n{result['message']}")
+                                
+                                if result['accepted']:
+                                    self.complete_acquisition(company, result['final_price'])
+                                    
+                                    # Remove from available deals
+                                    if company in companies:
+                                        companies.remove(company)
+                                    
+                                    ih.press_enter_to_continue()
+                                    return  # Exit acquisition flow
+                                
+                                ih.press_enter_to_continue()
+                                break
+                                
+                            elif action == 'offer':
+                                max_offer = self.player.available_capital()
+                                offer = ih.prompt_number(
+                                    "Enter your offer",
+                                    min_value=0,
+                                    max_value=max_offer,
+                                    allow_float=False
+                                )
+                                
+                                if offer is None:
+                                    continue
+                                    
+                                result = deal.make_offer(offer)
+                                print(f"\n{result['message']}")
+                                
+                                if result['accepted']:
+                                    self.complete_acquisition(company, result['final_price'])
+                                    
+                                    # Remove from available deals
+                                    if company in companies:
+                                        companies.remove(company)
+                                    
+                                    ih.press_enter_to_continue()
+                                    return
+                                elif 'counter_offer' in result:
+                                    deal.asking_price = result['counter_offer']
+                                ih.press_enter_to_continue()
+                                
+                            else:  # walk away
+                                result = deal.walk_away()
+                                print(f"\n{result['message']}")
+                                ih.press_enter_to_continue()
+                                break
+                    
+                    break  # Back to company selection
+                    
+    def complete_acquisition(self, company: Company, price: float) -> None:
+        """Complete an acquisition transaction with player-chosen financing."""
+        # Calculate available resources
+        available_cash = self.player.cash
+        available_debt = self.player.get_debt_capacity() - self.player.current_debt
+        max_affordable = available_cash + available_debt
+        
+        if price > max_affordable:
+            print("\nInsufficient capital to complete acquisition!")
+            return
+        
+        # Let player choose financing structure
+        print("\n" + "=" * 70)
+        print("FINANCING STRUCTURE")
+        print("=" * 70)
+        print(f"\nPurchase Price: ${price:,.0f}")
+        print(f"\nAvailable Resources:")
+        print(f"  Cash Available:        ${available_cash:,.0f}")
+        print(f"  Debt Capacity:         ${available_debt:,.0f}")
+        print(f"  Total Available:       ${max_affordable:,.0f}")
+        print()
+        
+        # Determine min/max debt needed
+        min_debt_needed = max(0, price - available_cash)
+        max_debt_allowed = min(available_debt, price)
+        
+        if min_debt_needed > 0:
+            print(f"⚠️  You must use at least ${min_debt_needed:,.0f} in debt (insufficient cash)")
+        
+        print("\nHow much DEBT would you like to use for this acquisition?")
+        print(f"  • Minimum: ${min_debt_needed:,.0f}")
+        print(f"  • Maximum: ${max_debt_allowed:,.0f}")
+        print(f"  • Recommended: ${min(price * 0.7, max_debt_allowed):,.0f} (70% leverage)")
+        
+        debt_to_use = ih.prompt_number(
+            "\nEnter debt amount",
+            min_value=min_debt_needed,
+            max_value=max_debt_allowed,
+            allow_float=False
+        )
+        
+        if debt_to_use is None:
+            print("\nAcquisition cancelled.")
+            return
+        
+        cash_to_use = price - debt_to_use
+        
+        # Confirm the structure
+        print("\n" + "=" * 70)
+        print("CONFIRM FINANCING")
+        print("=" * 70)
+        print(f"\nPurchase Price:  ${price:,.0f}")
+        print(f"  Cash:          ${cash_to_use:,.0f} ({cash_to_use/price:.1%})")
+        print(f"  Debt:          ${debt_to_use:,.0f} ({debt_to_use/price:.1%})")
+        print(f"\nAfter Transaction:")
+        print(f"  Remaining Cash:     ${available_cash - cash_to_use:,.0f}")
+        print(f"  Total Debt:         ${self.player.current_debt + debt_to_use:,.0f}")
+        print(f"  Debt Utilization:   {(self.player.current_debt + debt_to_use) / self.player.get_debt_capacity():.1%}")
+        print()
+        
+        if not ih.prompt_yes_no("Proceed with this financing structure?"):
+            print("\nAcquisition cancelled.")
+            return
+        
+        # Execute the transaction
+        if debt_to_use > 0:
+            if not self.player.take_debt(debt_to_use):
+                print("\nFailed to secure debt financing!")
+                return
+        
+        self.player.adjust_cash(-price)
+        debt_used = debt_to_use
                 
         # Add company to portfolio
         company.acquisition_price = price
@@ -243,7 +377,7 @@ class GameEngine:
         
     def operate_portfolio(self) -> None:
         """Operate on portfolio companies."""
-        company = menus.portfolio_menu(self.player)
+        company = menus.portfolio_operations_menu(self.player, self.time_manager.current_quarter)
         
         if company is None:
             return
@@ -255,12 +389,21 @@ class GameEngine:
                 break
             elif action == 'cost_cutting':
                 self.handle_cost_cutting(company)
+                # Mark company as operated
+                company.mark_operated(self.time_manager.current_quarter)
+                break  # Exit after one operation
             elif action == 'capex':
                 self.handle_capex_investment(company)
+                company.mark_operated(self.time_manager.current_quarter)
+                break
             elif action == 'replace_mgmt':
                 self.handle_management_replacement(company)
+                company.mark_operated(self.time_manager.current_quarter)
+                break
             elif action == 'strategy':
                 self.handle_growth_strategy(company)
+                company.mark_operated(self.time_manager.current_quarter)
+                break
                 
     def handle_cost_cutting(self, company: Company) -> None:
         """Handle cost cutting operation with narrative."""
@@ -295,6 +438,22 @@ class GameEngine:
         print(f"   • EBITDA Margin: {result['margin_improvement']:+.1%}")
         print(f"   • Growth Rate: {-result['growth_penalty']:.1%}")
         
+        # Show operational health damage
+        if result.get('health_damage', 0) > 0:
+            print(f"\n🏥 OPERATIONAL HEALTH:")
+            print(f"   • Health Decreased: -{result['health_damage']:.1%}")
+            print(f"   • Current Health: {company.operational_health:.0%}")
+            
+            if company.operational_health < 0.5:
+                print(f"   ⚠️  CRITICAL: Company health below 50%!")
+                print(f"   • Increased volatility and downside risk")
+                print(f"   • Reduced growth potential")
+                print(f"   • Risk of operational failure")
+            elif company.operational_health < 0.7:
+                print(f"   ⚠️  WARNING: Company health degraded")
+                print(f"   • Higher volatility in performance")
+                print(f"   • Reduced growth potential")
+        
         if result.get('morale_impact'):
             print(f"\n😞 MORALE IMPACT:")
             print(f"   Additional growth penalty from poor employee morale")
@@ -306,40 +465,138 @@ class GameEngine:
             print(f"   (Now at {self.player.reputation:.0%})")
         
         if intensity_normalized > 0.7:
-            print(f"\n⚠️  WARNING: Aggressive cost-cutting may have long-term consequences!")
+            print(f"\n⚠️  WARNING: Aggressive cost-cutting causes lasting operational damage!")
+            print(f"   Health recovers slowly (1% per quarter) - plan accordingly.")
         
         print("=" * 70)
             
         ih.press_enter_to_continue()
         
+    def choose_financing(self, amount: float, operation_name: str) -> tuple[bool, float]:
+        """
+        Let player choose financing for an operation.
+        
+        Args:
+            amount: Total amount needed
+            operation_name: Name of operation (for display)
+            
+        Returns:
+            (success, debt_used) tuple
+        """
+        available_cash = self.player.cash
+        available_debt = self.player.get_debt_capacity() - self.player.current_debt
+        max_affordable = available_cash + available_debt
+        
+        if amount > max_affordable:
+            print(f"\n⚠️  Insufficient capital for this operation!")
+            print(f"Amount needed: ${amount:,.0f}")
+            print(f"Available: ${max_affordable:,.0f}")
+            return (False, 0)
+        
+        # If can pay all cash, ask if they want to
+        if amount <= available_cash:
+            print(f"\nYou have sufficient cash (${available_cash:,.0f}) to pay all ${amount:,.0f}")
+            if ih.prompt_yes_no("Use all cash (no debt)?"):
+                return (True, 0)
+        
+        # Show financing dialog
+        print("\n" + "=" * 70)
+        print(f"FINANCING: {operation_name.upper()}")
+        print("=" * 70)
+        print(f"\nAmount Required: ${amount:,.0f}")
+        print(f"\nAvailable Resources:")
+        print(f"  Cash Available:    ${available_cash:,.0f}")
+        print(f"  Debt Capacity:     ${available_debt:,.0f}")
+        print(f"  Total Available:   ${max_affordable:,.0f}")
+        
+        min_debt_needed = max(0, amount - available_cash)
+        max_debt_allowed = min(available_debt, amount)
+        
+        if min_debt_needed > 0:
+            print(f"\n⚠️  Must use at least ${min_debt_needed:,.0f} in debt")
+        
+        print(f"\nHow much DEBT to use?")
+        print(f"  Range: ${min_debt_needed:,.0f} - ${max_debt_allowed:,.0f}")
+        
+        debt_to_use = ih.prompt_number(
+            "Enter debt amount",
+            min_value=min_debt_needed,
+            max_value=max_debt_allowed,
+            allow_float=False
+        )
+        
+        if debt_to_use is None:
+            return (False, 0)
+        
+        cash_to_use = amount - debt_to_use
+        
+        # Confirm
+        print(f"\nFinancing breakdown:")
+        print(f"  Cash: ${cash_to_use:,.0f}")
+        print(f"  Debt: ${debt_to_use:,.0f}")
+        
+        if not ih.prompt_yes_no("Proceed?"):
+            return (False, 0)
+        
+        # Execute financing
+        if debt_to_use > 0:
+            if not self.player.take_debt(debt_to_use):
+                print("\nFailed to secure debt!")
+                return (False, 0)
+        
+        self.player.adjust_cash(-amount)
+        return (True, debt_to_use)
+    
     def handle_capex_investment(self, company: Company) -> None:
-        """Handle capex investment."""
+        """Handle capex investment with debt financing option."""
         print("\nCapital Investment")
         print(f"Company revenue: ${company.revenue:,.0f}")
-        print(f"Your available cash: ${self.player.cash:,.0f}")
+        
+        max_affordable = self.player.cash + (self.player.get_debt_capacity() - self.player.current_debt)
+        print(f"Available capital (cash + debt): ${max_affordable:,.0f}")
         
         amount = ih.prompt_number(
             "Enter investment amount",
             min_value=0,
-            max_value=self.player.cash,
+            max_value=max_affordable,
             allow_float=False
         )
         
         if amount is None or amount == 0:
             return
+        
+        # Choose financing
+        success, debt_used = self.choose_financing(amount, "CapEx Investment")
+        
+        if not success:
+            print("\nInvestment cancelled.")
+            ih.press_enter_to_continue()
+            return
             
         result = portfolio_ops.apply_capex_investment(company, amount)
-        self.player.adjust_cash(-amount)
         
         print(f"\n{result['message']}")
+        if debt_used > 0:
+            print(f"Financed with ${debt_used:,.0f} debt")
         ih.press_enter_to_continue()
         
     def handle_management_replacement(self, company: Company) -> None:
-        """Handle management replacement."""
+        """Handle management replacement with debt financing option."""
         print(f"\nCurrent Manager: {company.manager}")
         print(f"Replacement cost: ${config.MANAGER_REPLACEMENT_COST:,.0f}")
         
         if not ih.prompt_yes_no("Proceed with management replacement?"):
+            return
+        
+        # Choose financing
+        success, debt_used = self.choose_financing(
+            config.MANAGER_REPLACEMENT_COST, 
+            "Management Replacement"
+        )
+        
+        if not success:
+            print("\nReplacement cancelled.")
+            ih.press_enter_to_continue()
             return
             
         result = portfolio_ops.replace_management(company, self.player)
@@ -347,11 +604,13 @@ class GameEngine:
         print(f"\n{result['message']}")
         if result['success']:
             print(f"New Manager: {result['new_manager']}")
+            if debt_used > 0:
+                print(f"Financed with ${debt_used:,.0f} debt")
             
         ih.press_enter_to_continue()
         
     def handle_growth_strategy(self, company: Company) -> None:
-        """Handle growth strategy selection."""
+        """Handle growth strategy selection with debt financing option."""
         print("\nGrowth Strategies:")
         
         options = [
@@ -373,14 +632,26 @@ class GameEngine:
         result = portfolio_ops.pursue_acquisition_strategy(company, strategy)
         
         if result.get('cost'):
-            if self.player.cash >= result['cost']:
-                self.player.adjust_cash(-result['cost'])
-            else:
-                print("\nInsufficient cash for this strategy!")
+            strategy_names = {
+                'roll_up': 'Roll-up Strategy',
+                'expand': 'Expansion Strategy',
+                'diversify': 'Diversification Strategy'
+            }
+            
+            # Choose financing
+            success, debt_used = self.choose_financing(
+                result['cost'], 
+                strategy_names.get(strategy, 'Growth Strategy')
+            )
+            
+            if not success:
+                print("\nStrategy cancelled.")
                 ih.press_enter_to_continue()
                 return
                 
         print(f"\n{result['message']}")
+        if result.get('cost') and debt_used > 0:
+            print(f"Financed with ${debt_used:,.0f} debt")
         ih.press_enter_to_continue()
         
     def exit_investment(self) -> None:

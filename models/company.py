@@ -32,9 +32,42 @@ class Company:
         self.acquisition_quarter: Optional[int] = None
         self.current_valuation = 0.0
         
+        # Operation tracking
+        self.last_operation_quarter: Optional[int] = None
+        self.operations_this_quarter = 0
+        
         # Historical tracking
         self.revenue_history = [revenue]
         self.ebitda_history = [revenue * ebitda_margin]
+        
+        # Operational health (0-1 scale, affects long-term viability)
+        # Initialize AFTER all other attributes are set
+        self.operational_health = self._calculate_initial_health()
+    
+    def _calculate_initial_health(self) -> float:
+        """
+        Calculate initial operational health based on company fundamentals.
+        
+        Returns:
+            Float between 0 and 1 representing health
+        """
+        import random
+        
+        # Base health from management quality (60-90% of final)
+        mgmt_contribution = 0.5 + (self.manager.competence * 0.4)  # 50-90%
+        
+        # Bonus from good fundamentals
+        margin_bonus = (self.ebitda_margin - 0.10) * 0.5  # Good margins = health
+        growth_bonus = max(0, self.growth_rate) * 2.0  # Positive growth = health
+        
+        # Small random factor
+        random_factor = random.uniform(-0.05, 0.05)
+        
+        # Calculate total
+        health = mgmt_contribution + margin_bonus + growth_bonus + random_factor
+        
+        # Clamp between 0.5 and 1.0 (companies start reasonably healthy)
+        return max(0.5, min(1.0, health))
         
     @property
     def ebitda(self) -> float:
@@ -128,6 +161,21 @@ class Company:
                 f"Rev ${self.revenue:,.0f}, "
                 f"EBITDA ${self.ebitda:,.0f} ({self.ebitda_margin:.1%})")
         
+    def mark_operated(self, current_quarter: int) -> None:
+        """Mark that an operation was performed on this company this quarter."""
+        if self.last_operation_quarter != current_quarter:
+            self.operations_this_quarter = 0
+        self.last_operation_quarter = current_quarter
+        self.operations_this_quarter += 1
+        
+    def can_operate(self, current_quarter: int) -> bool:
+        """Check if company can be operated on this quarter."""
+        return self.last_operation_quarter != current_quarter
+        
+    def reset_quarterly_operations(self) -> None:
+        """Reset operation tracking for new quarter."""
+        self.operations_this_quarter = 0
+    
     def __repr__(self) -> str:
         return f"Company(name='{self.name}', sector='{self.sector}', revenue={self.revenue:.0f})"
 

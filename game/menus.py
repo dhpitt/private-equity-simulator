@@ -127,7 +127,7 @@ def deal_negotiation_menu(deal: Deal, player: Player) -> str:
 
 def portfolio_menu(player: Player) -> Optional[Company]:
     """
-    Display portfolio and allow selection of a company.
+    Display portfolio and allow selection of a company for viewing (read-only).
     
     Returns:
         Selected company or None
@@ -155,6 +155,62 @@ def portfolio_menu(player: Player) -> Optional[Company]:
         return None
         
     return player.portfolio[choice]
+
+
+def portfolio_operations_menu(player: Player, current_quarter: int) -> Optional[Company]:
+    """
+    Display portfolio for operations and allow selection of a company.
+    Shows which companies have already been operated on this quarter.
+    
+    Returns:
+        Selected company or None
+    """
+    if not player.portfolio:
+        print("\nYour portfolio is empty.")
+        ih.press_enter_to_continue()
+        return None
+        
+    ih.clear_screen()
+    print("=" * 70)
+    print("PORTFOLIO OPERATIONS")
+    print("=" * 70)
+    print("\nNote: You can only perform ONE operation per company per quarter.")
+    print("Companies already operated on this quarter are marked with ✗\n")
+    
+    tv.display_portfolio(player.portfolio)
+    
+    # Build options list with availability indicators
+    options = []
+    available_companies = []
+    
+    for i, company in enumerate(player.portfolio):
+        can_operate = company.can_operate(current_quarter)
+        status = "✓" if can_operate else "✗"
+        options.append(f"{status} {company.name} {'[OPERATED]' if not can_operate else ''}")
+        if can_operate:
+            available_companies.append((i, company))
+    
+    options.append("Back to Main Menu")
+    
+    if not available_companies:
+        print("\n⚠️  All companies have been operated on this quarter!")
+        print("Advance to the next quarter to operate on them again.")
+        ih.press_enter_to_continue()
+        return None
+    
+    choice = ih.prompt_choice(options, "Select a company to operate on")
+    
+    if choice < 0 or choice >= len(player.portfolio):
+        return None
+    
+    # Check if selected company can be operated on
+    selected_company = player.portfolio[choice]
+    if not selected_company.can_operate(current_quarter):
+        print(f"\n⚠️  {selected_company.name} has already been operated on this quarter!")
+        ih.press_enter_to_continue()
+        return None
+        
+    return selected_company
 
 
 def company_operations_menu(company: Company, player: Player) -> str:
@@ -341,3 +397,115 @@ def load_game_menu() -> Optional[str]:
     
     return saves[choice][0]  # Return save name
 
+
+
+def sector_selection_menu() -> str:
+    """
+    Display menu for selecting a sector to browse companies.
+    
+    Returns:
+        Selected sector name or None if back
+    """
+    from simulation.procedural_gen import get_sectors
+    
+    ih.clear_screen()
+    print("=" * 70)
+    print("SELECT SECTOR TO BROWSE")
+    print("=" * 70)
+    print("\nChoose a sector to view available companies:\n")
+    
+    sectors = get_sectors()
+    options = sectors + ["Back to Main Menu"]
+    
+    choice = ih.prompt_choice(options, "Select a sector")
+    
+    if choice < 0 or choice >= len(sectors):
+        return None
+        
+    return sectors[choice]
+
+
+def valuation_tier_menu(sector: str) -> str:
+    """
+    Display menu for selecting a valuation tier within a sector.
+    
+    Args:
+        sector: The selected sector
+        
+    Returns:
+        Selected tier name or None if back
+    """
+    ih.clear_screen()
+    print("=" * 70)
+    print(f"SELECT VALUATION TIER - {sector.upper()}")
+    print("=" * 70)
+    print("\nChoose a price range:\n")
+    
+    tiers = {
+        'micro': ('Micro', '$500K - $2M', 'Small local businesses'),
+        'small': ('Small', '$2M - $5M', 'Established local/regional companies'),
+        'medium': ('Medium', '$5M - $15M', 'Regional leaders'),
+        'large': ('Large', '$15M - $50M', 'Large regional/national players')
+    }
+    
+    tier_keys = list(tiers.keys())
+    options = []
+    
+    for tier_key in tier_keys:
+        name, range_str, desc = tiers[tier_key]
+        options.append(f"{name:8} {range_str:15} - {desc}")
+    
+    options.append("Back to Sector Selection")
+    
+    choice = ih.prompt_choice(options, "Select a tier")
+    
+    if choice < 0 or choice >= len(tier_keys):
+        return None
+        
+    return tier_keys[choice]
+
+
+def tiered_company_selection_menu(sector: str, tier: str, companies: List) -> Optional[Any]:
+    """
+    Display companies in a specific sector and tier for selection.
+    
+    Args:
+        sector: The selected sector
+        tier: The selected valuation tier
+        companies: List of companies in this tier
+        
+    Returns:
+        Selected company or None if back
+    """
+    from ui import table_views as tv
+    
+    ih.clear_screen()
+    
+    tier_names = {
+        'micro': 'Micro ($500K - $2M)',
+        'small': 'Small ($2M - $5M)',
+        'medium': 'Medium ($5M - $15M)',
+        'large': 'Large ($15M - $50M)'
+    }
+    
+    print("=" * 70)
+    print(f"{sector.upper()} - {tier_names.get(tier, tier.upper())}")
+    print("=" * 70)
+    print(f"\n{len(companies)} companies available:\n")
+    
+    # Display companies in a simple table format
+    print(f"{'Company':<30} {'Revenue':<15} {'Valuation':<15}")
+    print("-" * 70)
+    for company in companies:
+        print(f"{company.name:<30} ${company.revenue:>12,.0f}  ${company.current_valuation:>12,.0f}")
+    print()
+    
+    options = [f"{c.name} - ${c.current_valuation:,.0f}" for c in companies]
+    options.append("Back to Tier Selection")
+    
+    choice = ih.prompt_choice(options, "Select a company to view details")
+    
+    if choice < 0 or choice >= len(companies):
+        return None
+        
+    return companies[choice]

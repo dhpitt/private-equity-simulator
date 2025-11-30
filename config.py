@@ -4,6 +4,7 @@ Global configuration settings for the PE Simulator game.
 
 # Game Settings
 STARTING_CAPITAL = 2_000_000  # $2M (must use debt to acquire)
+STARTING_REPUTATION = 0.20  # Start with low reputation (20%)
 BASE_DEBT_CAPACITY = 10_000_000  # $10M (base capacity)
 GAME_DURATION_QUARTERS = 20  # 5 years
 

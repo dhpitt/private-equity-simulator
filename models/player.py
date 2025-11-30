@@ -13,7 +13,7 @@ class Player:
         self.cash = starting_cash if starting_cash is not None else config.STARTING_CAPITAL
         self.current_debt = 0.0
         self.portfolio: List['Company'] = []
-        self.reputation = 1.0  # 0-1 scale, affects debt capacity and deal terms
+        self.reputation = config.STARTING_REPUTATION  # Start with low reputation
         self.deal_history: List[Dict[str, Any]] = []
         
         # Base debt capacity (grows with reputation and net worth)
@@ -96,6 +96,42 @@ class Player:
     def adjust_reputation(self, delta: float) -> None:
         """Adjust reputation, keeping it between 0 and 1."""
         self.reputation = max(0.0, min(1.0, self.reputation + delta))
+    
+    def update_reputation_from_profits(self, quarterly_profit: float) -> float:
+        """
+        Update reputation based on quarterly profits.
+        Profits increase reputation, losses decrease it.
+        
+        Args:
+            quarterly_profit: Total profit/loss for the quarter
+            
+        Returns:
+            The reputation change
+        """
+        # Calculate reputation change based on profit relative to portfolio value
+        portfolio_value = self.compute_portfolio_value()
+        
+        if portfolio_value > 0:
+            # ROQ (Return on Quarter) = Quarterly Profit / Portfolio Value
+            roq = quarterly_profit / portfolio_value
+            
+            # Scale reputation change: 10% quarterly return = +5% reputation
+            reputation_change = roq * 0.5
+            
+            # Cap the change at ±5% per quarter
+            reputation_change = max(-0.05, min(0.05, reputation_change))
+        else:
+            # No portfolio, small gain/loss based on profit sign
+            if quarterly_profit > 0:
+                reputation_change = 0.01
+            elif quarterly_profit < 0:
+                reputation_change = -0.01
+            else:
+                reputation_change = 0.0
+        
+        self.adjust_reputation(reputation_change)
+        return reputation_change
+
         
     def available_capital(self) -> float:
         """Calculate available capital for investments (cash + unused debt capacity)."""

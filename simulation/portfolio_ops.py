@@ -52,6 +52,16 @@ def apply_cost_cutting(company: 'Company', intensity: float = 0.5) -> Dict[str, 
             growth_penalty += additional_growth_penalty
             morale_impact = True
     
+    # OPERATIONAL HEALTH DAMAGE (long-term viability risk)
+    # Cost-cutting damages operational health, making company fragile
+    health_damage = intensity * 0.15  # Up to 15% health loss per cut
+    
+    # Aggressive cutting causes exponentially more damage
+    if intensity > 0.7:
+        health_damage = intensity * 0.25  # Up to 25% health loss
+    
+    company.operational_health = max(0.0, company.operational_health - health_damage)
+    
     # Apply changes
     old_margin = company.ebitda_margin
     company.ebitda_margin = min(0.50, company.ebitda_margin + margin_improvement)
@@ -61,6 +71,7 @@ def apply_cost_cutting(company: 'Company', intensity: float = 0.5) -> Dict[str, 
         'success': True,
         'margin_improvement': company.ebitda_margin - old_margin,
         'growth_penalty': growth_penalty,
+        'health_damage': health_damage,
         'morale_impact': morale_impact,
         'reputation_hit': reputation_hit,
         'narrative_action': narrative_result['action'],
@@ -93,11 +104,18 @@ def apply_capex_investment(company: 'Company', amount: float) -> Dict[str, Any]:
     old_growth = company.growth_rate
     company.growth_rate += actual_growth_boost
     
+    # HEALTH IMPROVEMENT - investing in the business improves operational health
+    # Larger investments relative to revenue = more health improvement
+    health_improvement = min(0.15, revenue_ratio * 0.10)  # Up to 15% improvement
+    company.operational_health = min(1.0, company.operational_health + health_improvement)
+    
     return {
         'success': True,
         'growth_boost': actual_growth_boost,
+        'health_improvement': health_improvement,
         'effectiveness': effectiveness,
-        'message': f"Growth rate increased by {actual_growth_boost:.1%}"
+        'message': f"Growth rate increased by {actual_growth_boost:.1%}. "
+                  f"Operational health improved by {health_improvement:.1%}."
     }
 
 
@@ -147,14 +165,22 @@ def replace_management(company: 'Company', player: 'Player') -> Dict[str, Any]:
     transition_penalty = random.uniform(0.01, 0.03)
     company.growth_rate -= transition_penalty
     
+    # HEALTH IMPROVEMENT - better management can improve operational health
+    # Only improves if new manager is better
+    competence_delta = new_manager.competence - old_manager.competence
+    health_improvement = max(0, competence_delta * 0.20)  # Up to 20% if much better
+    company.operational_health = min(1.0, company.operational_health + health_improvement)
+    
     return {
         'success': True,
         'cost': cost,
         'old_manager': old_manager,
         'new_manager': new_manager,
         'transition_penalty': transition_penalty,
+        'health_improvement': health_improvement,
         'difficult': difficult,
-        'message': f"Management replaced. Cost: ${cost:,.0f}"
+        'message': f"Management replaced. Cost: ${cost:,.0f}. "
+                  f"Operational health {'improved' if health_improvement > 0 else 'unchanged'}."
     }
 
 
@@ -170,19 +196,66 @@ def pursue_acquisition_strategy(company: 'Company', strategy_type: str) -> Dict[
         Dictionary with results
     """
     if strategy_type == 'roll_up':
-        # Buy competitors to consolidate market
-        revenue_boost = random.uniform(0.10, 0.25)
-        margin_boost = random.uniform(0.02, 0.05)  # Synergies
+        # Buy competitors to consolidate market - EXPENSIVE and RISKY
+        num_acquisitions = random.randint(2, 5)
+        
+        # COST: Acquiring competitors is expensive
+        # Cost = 150-200% of current revenue to buy smaller competitors
+        cost_multiplier = random.uniform(1.5, 2.0)
+        cost = company.revenue * cost_multiplier
+        
+        # BENEFITS: Revenue and margin improvements
+        revenue_boost = random.uniform(0.10, 0.20)  # Reduced from 0.25
+        margin_boost = random.uniform(0.01, 0.03)  # Reduced from 0.05
         
         company.revenue *= (1 + revenue_boost)
         company.ebitda_margin += margin_boost
         company.ebitda_margin = min(0.50, company.ebitda_margin)
         
+        # RISKS: Integration challenges
+        # Increased volatility during integration period
+        volatility_increase = random.uniform(0.03, 0.08)
+        company.volatility += volatility_increase
+        
+        # Integration period creates temporary growth drag
+        integration_drag = random.uniform(0.01, 0.03)
+        company.growth_rate -= integration_drag
+        
+        # HEALTH: Mixed impact - scale improves some things, integration damages others
+        # Net effect is usually slightly positive but not guaranteed
+        integration_success = random.random()
+        
+        if integration_success > 0.7:
+            # Smooth integration
+            health_improvement = random.uniform(0.03, 0.08)
+            company.operational_health = min(1.0, company.operational_health + health_improvement)
+            integration_message = "Integration went smoothly."
+        elif integration_success > 0.4:
+            # Neutral integration
+            health_improvement = 0
+            integration_message = "Integration proceeded normally."
+        else:
+            # Rough integration
+            health_damage = random.uniform(0.05, 0.10)
+            company.operational_health = max(0.0, company.operational_health - health_damage)
+            health_improvement = -health_damage
+            integration_message = "Integration challenges encountered!"
+        
         return {
             'success': True,
+            'cost': cost,
+            'num_acquisitions': num_acquisitions,
             'revenue_boost': revenue_boost,
             'margin_boost': margin_boost,
-            'message': f"Roll-up strategy: Revenue +{revenue_boost:.1%}, Margin +{margin_boost:.1%}"
+            'volatility_increase': volatility_increase,
+            'integration_drag': integration_drag,
+            'health_improvement': health_improvement,
+            'integration_success': integration_success,
+            'message': f"Roll-up strategy: Acquired {num_acquisitions} competitors for ${cost:,.0f}. "
+                      f"Revenue +{revenue_boost:.1%}, Margin +{margin_boost:.1%}. "
+                      f"Volatility +{volatility_increase:.1%} (integration risk). "
+                      f"Temporary growth drag -{integration_drag:.1%}. "
+                      f"{integration_message}"
         }
         
     elif strategy_type == 'expand':
@@ -193,11 +266,17 @@ def pursue_acquisition_strategy(company: 'Company', strategy_type: str) -> Dict[
         company.growth_rate += growth_boost
         cost = company.revenue * upfront_cost_ratio
         
+        # HEALTH IMPROVEMENT - expansion strengthens business
+        health_improvement = random.uniform(0.03, 0.08)
+        company.operational_health = min(1.0, company.operational_health + health_improvement)
+        
         return {
             'success': True,
             'growth_boost': growth_boost,
+            'health_improvement': health_improvement,
             'cost': cost,
-            'message': f"Expansion strategy: Growth +{growth_boost:.1%}, Cost ${cost:,.0f}"
+            'message': f"Expansion strategy: Growth +{growth_boost:.1%}, Cost ${cost:,.0f}. "
+                      f"Operational health improved by {health_improvement:.1%}."
         }
         
     elif strategy_type == 'diversify':

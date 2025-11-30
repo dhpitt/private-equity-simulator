@@ -5,6 +5,11 @@ Screens - high-level UI screens for intro, endgame, etc.
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
+from rich.align import Align
+import time
+import random
+import json
+from pathlib import Path
 from models.player import Player
 from models.market import Market
 from game.time_manager import TimeManager
@@ -12,6 +17,48 @@ from ui.table_views import display_player_summary, display_deal_history
 import config
 
 console = Console()
+
+
+def load_quotes():
+    """Load inspirational quotes from JSON file."""
+    quotes_path = Path(__file__).parent.parent / 'data' / 'quotes.json'
+    try:
+        with open(quotes_path, 'r') as f:
+            data = json.load(f)
+            return data.get('inspirational_quotes', [])
+    except FileNotFoundError:
+        # Fallback quotes if file not found
+        return [
+            "All my losses was lessons.",
+            "It's lonely at the top.",
+            "Hustle harder."
+        ]
+
+
+def show_quote_screen():
+    """Display a random inspirational quote during quarter transitions."""
+    quotes = load_quotes()
+    quote = random.choice(quotes)
+    
+    console.clear()
+    
+    # Create styled quote
+    quote_text = Text(quote, style="bold cyan", justify="center")
+    
+    # Display in a panel
+    panel = Panel(
+        Align.center(quote_text, vertical="middle"),
+        title="[bold yellow]💎 Words of Wisdom 💎[/bold yellow]",
+        border_style="bright_yellow",
+        padding=(2, 4)
+    )
+    
+    console.print("\n" * 5)
+    console.print(panel)
+    console.print("\n" * 5)
+    
+    # Pause for effect
+    time.sleep(2.5)
 
 
 def show_intro() -> None:
@@ -31,21 +78,25 @@ Welcome to the Private Equity Simulator!
 
 You are the managing partner of a new private equity fund with:
   • ${config.STARTING_CAPITAL:,.0f} in starting capital
-  • ${starting_capacity:,.0f} initial debt capacity (grows with success!)
+  • ${starting_capacity:,.0f} initial debt capacity
+  • {config.STARTING_REPUTATION:.0%} starting reputation (build this through profits!)
   • {config.GAME_DURATION_QUARTERS} quarters ({config.GAME_DURATION_QUARTERS // 4} years) to build your portfolio
 
 Your goal is to maximize your fund's value by:
   • Acquiring promising companies (debt financing required!)
   • Improving their operations
-  • Building reputation and net worth to unlock more debt capacity
+  • Generating profits to build reputation and net worth
   • Managing through market cycles
   • Exiting at the right time
 
-Key Mechanic: Your debt capacity increases as you build net worth and 
-maintain your reputation. Success breeds more opportunity!
+Key Mechanics:
+  • Start with LOW reputation - prove yourself through profits
+  • Debt capacity grows with net worth and reputation
+  • One operation per company per quarter (choose wisely!)
+  • Success breeds more opportunity!
 
 Good luck!
-    """
+"""
     
     panel = Panel(
         intro_text.strip(),

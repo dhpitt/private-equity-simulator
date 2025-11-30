@@ -39,33 +39,89 @@ def display_company_list(companies: List[Company]) -> None:
 
 
 def display_portfolio(companies: List[Company]) -> None:
-    """Display portfolio companies with additional metrics."""
+    """Display portfolio companies with P&L tracking."""
     table = Table(title="Portfolio Companies")
     
     table.add_column("#", style="dim")
     table.add_column("Name", style="cyan")
     table.add_column("Sector", style="magenta")
-    table.add_column("Revenue", justify="right", style="green")
-    table.add_column("EBITDA Margin", justify="right", style="yellow")
-    table.add_column("Qtr Growth", justify="right", style="blue")
-    table.add_column("Valuation", justify="right", style="bold green")
-    table.add_column("Manager", style="dim")
+    table.add_column("Purchase", justify="right", style="blue")
+    table.add_column("Current Val", justify="right", style="yellow")
+    table.add_column("P&L", justify="right")
+    table.add_column("Return", justify="right")
+    table.add_column("Health", justify="right")
+    
+    total_invested = 0
+    total_current_value = 0
     
     for i, company in enumerate(companies, 1):
-        qtr_growth = company.get_quarterly_growth()
+        # Calculate returns
+        purchase_price = company.acquisition_price if company.acquisition_price else company.current_valuation
+        current_value = company.current_valuation
+        pnl = current_value - purchase_price
+        return_pct = (pnl / purchase_price) if purchase_price > 0 else 0
+        
+        # Track totals
+        total_invested += purchase_price
+        total_current_value += current_value
+        
+        # Color code P&L and returns
+        if pnl > 0:
+            pnl_str = f"[green]+${abs(pnl):,.0f}[/green]"
+            return_str = f"[green]{return_pct:+.1%}[/green]"
+        elif pnl < 0:
+            pnl_str = f"[red]-${abs(pnl):,.0f}[/red]"
+            return_str = f"[red]{return_pct:.1%}[/red]"
+        else:
+            pnl_str = "$0"
+            return_str = "0.0%"
+        
+        # Color code operational health
+        health = company.operational_health
+        if health >= 0.8:
+            health_str = f"[green]{health:.0%}[/green]"
+        elif health >= 0.6:
+            health_str = f"[yellow]{health:.0%}[/yellow]"
+        elif health >= 0.4:
+            health_str = f"[orange]{health:.0%}[/orange]"
+        else:
+            health_str = f"[red]{health:.0%} ⚠️[/red]"
         
         table.add_row(
             str(i),
             company.name,
             company.sector,
-            f"${company.revenue:,.0f}",
-            f"{company.ebitda_margin:.1%}",
-            f"{qtr_growth:+.1%}",
-            f"${company.current_valuation:,.0f}",
-            company.manager.name
+            f"${purchase_price:,.0f}",
+            f"${current_value:,.0f}",
+            pnl_str,
+            return_str,
+            health_str
         )
         
     console.print(table)
+    
+    # Display portfolio summary
+    if companies:
+        portfolio_pnl = total_current_value - total_invested
+        portfolio_return = (portfolio_pnl / total_invested) if total_invested > 0 else 0
+        
+        pnl_color = "green" if portfolio_pnl >= 0 else "red"
+        
+        print("\n" + "=" * 70)
+        print("PORTFOLIO SUMMARY")
+        print("=" * 70)
+        print(f"Total Invested:      ${total_invested:>15,.0f}")
+        print(f"Current Value:       ${total_current_value:>15,.0f}")
+        
+        from rich.console import Console as RichConsole
+        rc = RichConsole()
+        
+        pnl_sign = "+" if portfolio_pnl >= 0 else ""
+        return_sign = "+" if portfolio_return >= 0 else ""
+        
+        rc.print(f"Total P&L:           [{pnl_color}]{pnl_sign}${portfolio_pnl:>14,.0f}[/{pnl_color}]")
+        rc.print(f"Portfolio Return:    [{pnl_color}]{return_sign}{portfolio_return:>14.1%}[/{pnl_color}]")
+        print("=" * 70)
 
 
 def display_company_detail(company: Company) -> None:
