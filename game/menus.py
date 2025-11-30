@@ -500,18 +500,26 @@ def tiered_company_selection_menu(sector: str, tier: str, companies: List) -> Op
     print(f"\n{len(companies)} companies available:\n")
     
     # Display companies in a simple table format with better formatting for large numbers
-    print(f"{'Company':<45} {'Valuation':<20} {'Manager':<25}")
-    print("-" * 90)
+    print(f"{'Company':<40} {'Revenue':<15} {'Valuation':<15} {'Manager':<25}")
+    print("-" * 95)
     for company in companies:
-        # Format large numbers more readably
-        if company.current_valuation >= 1_000_000_000:  # Billions
-            val_str = f"${company.current_valuation / 1_000_000_000:>8,.1f}B"
-        elif company.current_valuation >= 1_000_000:  # Millions
-            val_str = f"${company.current_valuation / 1_000_000:>8,.1f}M"
+        # Format revenue
+        if company.revenue >= 1_000_000_000:  # Billions
+            rev_str = f"${company.revenue / 1_000_000_000:>6,.1f}B"
+        elif company.revenue >= 1_000_000:  # Millions
+            rev_str = f"${company.revenue / 1_000_000:>6,.1f}M"
         else:  # Thousands
-            val_str = f"${company.current_valuation / 1_000:>8,.1f}K"
+            rev_str = f"${company.revenue / 1_000:>6,.1f}K"
         
-        print(f"{company.name:<45} {val_str:<20} {company.manager.name:<25}")
+        # Format valuation
+        if company.current_valuation >= 1_000_000_000:  # Billions
+            val_str = f"${company.current_valuation / 1_000_000_000:>6,.1f}B"
+        elif company.current_valuation >= 1_000_000:  # Millions
+            val_str = f"${company.current_valuation / 1_000_000:>6,.1f}M"
+        else:  # Thousands
+            val_str = f"${company.current_valuation / 1_000:>6,.1f}K"
+        
+        print(f"{company.name:<40} {rev_str:<15} {val_str:<15} {company.manager.name:<25}")
     print()
     
     options = [f"{c.name} - ${c.current_valuation:,.0f}" for c in companies]
